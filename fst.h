@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <iostream>
 
 namespace PDA
 {
@@ -11,56 +12,53 @@ namespace PDA
 namespace Transducer
 {
 
-struct Edge
+template<typename T = wchar_t>
+struct AbstractEdge
 {
-    std::set<wchar_t> transitions;
-    int transitionNodeIndex;
+    std::set<T> transitions;
 
-    Edge();
-    Edge(const Edge &from);
+    AbstractEdge() {}
+    AbstractEdge(const AbstractEdge<T> &from)
+    {
+        transitions = from.transitions;
+    }
     /// Move semantics constructor
-    Edge(Edge &&from);
+    AbstractEdge(AbstractEdge<T> &&from)
+    {
+        transitions = std::move(from.transitions);
+        std::wcout << "\t***Move c-tor" << std::endl;
+    }
     /// Move semantics assignment operator
-    Edge& operator = (Edge &&from);
-
-    template<typename First, typename... Rest>
-    static Edge create(int transitionNodeIndex, const First& first, const Rest&... rest)
+    AbstractEdge<T>& operator = (AbstractEdge<T> &&from)
     {
-        Edge result;
-        result.transitionNodeIndex = transitionNodeIndex;
-        result.transitions = buildEdge(first, rest...);
-        return result;
+        transitions = std::move(from.transitions);
+        std::wcout << "\t***Move assign" << std::endl;
     }
-private:
-    template<typename T>
-    static std::set<wchar_t> buildEdge(const T& t)
+    AbstractEdge<T>& operator = (const AbstractEdge<T> &from)
     {
-        std::set<wchar_t> result;
-        result.insert(t);
-        return result;
+        transitions = from.transitions;
     }
 
-    template<typename First, typename... Rest>
-    static std::set<wchar_t> buildEdge(const First& first, const Rest&... rest)
+    template<typename ...Rest>
+    static AbstractEdge<T> create(T first, Rest ...rest)
     {
-        std::set<wchar_t> result = buildEdge(rest...);
-        result.insert(first);
+        AbstractEdge<T> result = create(rest...);
+        result.transitions.insert(first);
+        return result;
+    }
+
+    static AbstractEdge<T> create(T first)
+    {
+        AbstractEdge<T> result;
+        result.transitions.insert(first);
         return result;
     }
 };
+typedef AbstractEdge<> Edge;
 
 
 struct Vertex
 {
-    std::list<Edge> edges;
-
-    Vertex();
-    /// Move semantics constructor
-    Vertex(Vertex &&from);
-    /// Move semantics assignment operator
-    Vertex &operator = (Vertex &&from);
-    Vertex &operator << (Edge &&from);
-    Vertex &operator << (const Edge &from);
 };
 
 
