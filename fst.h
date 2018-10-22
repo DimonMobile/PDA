@@ -1,10 +1,9 @@
-#ifndef FST_H
+﻿#ifndef FST_H
 #define FST_H
 
 #include <vector>
 #include <list>
 #include <set>
-#include <iostream>
 
 namespace PDA
 {
@@ -17,7 +16,18 @@ struct AbstractEdge
 {
     std::set<T> transitions;
 
-    AbstractEdge() {}
+    AbstractEdge()
+    {
+    }
+
+    AbstractEdge(const std::initializer_list<T> &initList)
+    {
+        for(const T &item : initList)
+        {
+            transitions.insert(item);
+        }
+    }
+
     AbstractEdge(const AbstractEdge<T> &from)
     {
         transitions = from.transitions;
@@ -26,13 +36,11 @@ struct AbstractEdge
     AbstractEdge(AbstractEdge<T> &&from)
     {
         transitions = std::move(from.transitions);
-        std::wcout << "\t***Move c-tor" << std::endl;
     }
     /// Move semantics assignment operator
     AbstractEdge<T>& operator = (AbstractEdge<T> &&from)
     {
         transitions = std::move(from.transitions);
-        std::wcout << "\t***Move assign" << std::endl;
     }
     AbstractEdge<T>& operator = (const AbstractEdge<T> &from)
     {

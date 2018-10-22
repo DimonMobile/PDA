@@ -7,9 +7,9 @@
 int main(int argc, char **argv)
 {
     std::setlocale(LC_ALL, "en_US.utf8");
-    PDA::Transducer::Edge edge = PDA::Transducer::Edge::create(L'1', L'2', L'3', L'a', L'5');
-    std::wcout << edge.transitions.size() << std::endl;
-    for(auto &item : edge.transitions)
-        std::wcout << item << std::endl;
+
+    PDA::Transducer::Edge variadicTemplatesDeclare = PDA::Transducer::Edge::create(L'1', L'2', L'3', L'4', L'5');
+    PDA::Transducer::Edge initializerListDeclare = {L'A', L'B', L'C', L'D'};
+
 }
 
