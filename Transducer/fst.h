@@ -18,7 +18,7 @@ namespace Transducer
 template<typename T = DEFAULT_FST_UNIT>
 struct AbstractEdge
 {
-    std::set<T> m_transitions;
+    std::set<T> m_set;
 
     AbstractEdge()
     {
@@ -28,41 +28,41 @@ struct AbstractEdge
     {
         for(const T &item : initList)
         {
-            m_transitions.insert(item);
+            m_set.insert(item);
         }
     }
 
     AbstractEdge(const AbstractEdge<T> &from)
     {
-        m_transitions = from.m_transitions;
+        m_set = from.m_set;
     }
     /// Move semantics constructor
     AbstractEdge(AbstractEdge<T> &&from)
     {
-        m_transitions = std::move(from.m_transitions);
+        m_set = std::move(from.m_set);
     }
     /// Move semantics assignment operator
     AbstractEdge<T>& operator = (AbstractEdge<T> &&from)
     {
-        m_transitions = std::move(from.m_transitions);
+        m_set = std::move(from.m_set);
     }
     AbstractEdge<T>& operator = (const AbstractEdge<T> &from)
     {
-        m_transitions = from.m_transitions;
+        m_set = from.m_set;
     }
 
     template<typename ...Rest>
     static AbstractEdge<T> create(T first, Rest ...rest)
     {
         AbstractEdge<T> result = create(rest...);
-        result.m_transitions.insert(first);
+        result.m_set.insert(first);
         return result;
     }
 
     static AbstractEdge<T> create(T first)
     {
         AbstractEdge<T> result;
-        result.m_transitions.insert(first);
+        result.m_set.insert(first);
         return result;
     }
 };
@@ -128,24 +128,52 @@ public:
     {
         if (m_vertices.empty())
             return false;
-        m_markedVertices.clear();
-        m_visitedVertices = std::stack<Vertex*>();
-        m_markedVertices.push_back(0);
+        m_pendingVertices.clear();
+        m_pendingVertices.push_back(0);
+
         for(const wchar_t ch : src)
-        {
             if (!step(ch))
-                break;
+                return false;
+
+        for(const int i : m_pendingVertices)
+        {
+            if (m_vertices[i].hasAction())
+            {
+                m_vertices[i].m_action();
+                return true;
+            }
+            else if (m_vertices[i].m_transitions.empty())
+            {
+                return true;
+            }
         }
+        return false;
     }
 
     bool step(const wchar_t ch)
     {
+        std::list<int> verticesToAdd;
+        for(auto pendingVertexIdxIterator = m_pendingVertices.begin(); pendingVertexIdxIterator != m_pendingVertices.end(); ++pendingVertexIdxIterator)
+        {
+            int currentActiveVertexIdx = *pendingVertexIdxIterator;
+            Vertex &currentVertex = m_vertices[currentActiveVertexIdx];
+            for(const Transition& currentTransition : currentVertex.m_transitions)
+            {
+                if(currentTransition.second.m_set.find(ch) != currentTransition.second.m_set.end())
+                {
+                    verticesToAdd.push_back(currentTransition.first);
+                }
+            }
+        }
+        if (verticesToAdd.empty())
+            return false;
+        m_pendingVertices = std::move(verticesToAdd);
+        return true;
     }
 
 private:
     std::vector<Vertex> m_vertices;
-    std::list<int> m_markedVertices;
-    std::stack<int> m_visitedVertices;
+    std::list<int> m_pendingVertices;
 };
 typedef AbstractFst<> Fst;
 

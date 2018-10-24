@@ -64,7 +64,7 @@ void Settings::initParams(int argc, char **argv)
     }
     else if (m_isVersion)
     {
-        throw Exception::InformationException(Constants::applicationName + L' ' + Constants::applicationVersion + L' ' + Constants::organizationName);
+        throw Exception::InformationException(Constants::applicationName + L' ' + Constants::applicationVersion + L'\n' + Constants::organizationName);
     }
 }
 
