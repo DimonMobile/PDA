@@ -6,6 +6,7 @@
 #include "Transducer/fst.h"
 #include "Utils/settings.h"
 #include "Exception/information_exception.h"
+#include "Exception/params_exception.h"
 
 
 int main(int argc, char **argv)
@@ -31,10 +32,17 @@ int main(int argc, char **argv)
             ,   Fst::Vertex().setAction( [](){std::wcout << L"Full" << std::endl; } )                                                                           // 7
         };
         std::wcout << "***FinalStepTranducer: " << fst.execute(L"sqrt(ab)") << std::endl;
-    } catch (const PDA::Exception::InformationException &e) {
+    }
+    catch (const PDA::Exception::InformationException &e)
+    {
         std::wcout << e.what() << std::endl;
     }
+    catch (const PDA::Exception::ParamsException &e)
+    {
+        std::wcerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
-
+    return EXIT_SUCCESS;
 }
 

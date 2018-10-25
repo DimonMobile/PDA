@@ -1,6 +1,7 @@
 #include "settings.h"
 
 #include "../Exception/information_exception.h"
+#include "../Exception/params_exception.h"
 
 namespace PDA
 {
@@ -26,7 +27,8 @@ namespace Constants
     const std::wstring helpText = applicationDisplayName + L' ' + applicationVersion + L"\n\n"
                                   L"Arguments:\n"
                                   L"   -h or --help\t\t\tPrint help(this message) and exit\n"
-                                  L"   -V or --version\t\tPrint version information and exit";
+                                  L"   -V or --version\t\tPrint version information and exit\n"
+                                  L"   -S or --source\t\tSet source file";
 } // namespace Constants
 
 
@@ -51,7 +53,15 @@ void Settings::initParams(int argc, char **argv)
         }
         else if (currentParam == Constants::sourceFilePathArgumentLong || currentParam == Constants::sourceFilePathArgumentShort)
         {
-
+            if (++i < argc)
+            {
+                mbstowcs(buf, argv[i], PARAM_BUFFER_SIZE);
+                m_sourceFilePath = buf;
+            }
+            else
+            {
+                throw Exception::ParamsException( L"Key -S (--source) used but without argument" );
+            }
         }
         else if (currentParam == Constants::logFilePathArgumentLong || currentParam == Constants::logFilePathArgumentShort)
         {
@@ -65,6 +75,10 @@ void Settings::initParams(int argc, char **argv)
     else if (m_isVersion)
     {
         throw Exception::InformationException(Constants::applicationName + L' ' + Constants::applicationVersion + L'\n' + Constants::organizationName);
+    }
+    else if (m_sourceFilePath.empty())
+    {
+        throw Exception::ParamsException( L"No source file" );
     }
 }
 
