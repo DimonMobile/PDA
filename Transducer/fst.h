@@ -51,6 +51,14 @@ struct AbstractEdge
         m_set = from.m_set;
     }
 
+    AbstractEdge<T> operator + (const AbstractEdge<T> another)
+    {
+        AbstractEdge<T> result;
+        result.m_set = m_set;
+        result.m_set.insert(another.m_set.begin(), another.m_set.end());
+        return result;
+    }
+
     template<typename ...Rest>
     static AbstractEdge<T> create(T first, Rest ...rest)
     {
@@ -115,6 +123,8 @@ public:
             m_transitions.push_back(first);
         }
     };
+
+    AbstractFst() {}
 
     AbstractFst(const std::initializer_list<Vertex> &vertices)
     {
