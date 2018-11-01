@@ -17,12 +17,17 @@ public:
     static Settings &Instance();
     void initParams(int argc, char** argv);
 
+    std::string sourceFilePath() const;
+    std::wstring includeFilePath() const;
+
     Settings(const Settings&) = delete;
     void operator = (const Settings&) = delete;
+
 private:
     Settings();
     std::wstring m_logFilePath;
     std::wstring m_sourceFilePath;
+    std::wstring m_includeFilePath;
     bool m_isVersion;
     bool m_isHelp;
 };

@@ -3,12 +3,19 @@
 
 #include <string>
 
+namespace PDA
+{
+namespace Transducer
+{
 class Preprocessor
 {
 public:
-    Preprocessor(const std::wstring &src);
+    Preprocessor(const std::string &fileName);
+    void execute();
 private:
-    const std::wstring &m_source;
+    std::wstring m_source;
+    size_t m_lineIndex;
 };
-
+} // namespace Transducer
+} // namespace PDA
 #endif // PREPROCESSOR_H

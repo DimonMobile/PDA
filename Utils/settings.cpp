@@ -24,11 +24,14 @@ namespace Constants
     const std::wstring sourceFilePathArgumentShort = L"-S";
     const std::wstring logFilePathArgumentLong = L"--log";
     const std::wstring logFilePathArgumentShort = L"-L";
+    const std::wstring includePathArgumentLong = L"--include";
+    const std::wstring includePathArgumentShort = L"-I";
     const std::wstring helpText = applicationDisplayName + L' ' + applicationVersion + L"\n\n"
                                   L"Arguments:\n"
                                   L"   -h or --help\t\t\tPrint help(this message) and exit\n"
                                   L"   -V or --version\t\tPrint version information and exit\n"
-                                  L"   -S or --source\t\tSet source file";
+                                  L"   -S or --source\t\tSet source file\n"
+                                  L"   -I or --include\t\tSet directory where includes will be found\n";
 } // namespace Constants
 
 
@@ -63,6 +66,18 @@ void Settings::initParams(int argc, char **argv)
                 throw Exception::ParamsException( L"Key -S (--source) used but without argument" );
             }
         }
+        else if (currentParam == Constants::includePathArgumentLong || currentParam == Constants::includePathArgumentShort)
+        {
+            if (++i < argc)
+            {
+                mbstowcs(buf, argv[i], PARAM_BUFFER_SIZE);
+                m_includeFilePath = buf;
+            }
+            else
+            {
+                throw Exception::ParamsException( L"Key -I (--include) used but without argument" );
+            }
+        }
         else if (currentParam == Constants::logFilePathArgumentLong || currentParam == Constants::logFilePathArgumentShort)
         {
 
@@ -82,9 +97,19 @@ void Settings::initParams(int argc, char **argv)
     }
 }
 
+std::string Settings::sourceFilePath() const
+{
+    return std::string(m_sourceFilePath.begin(), m_sourceFilePath.end());
+}
+
 Settings::Settings()
 {
 
+}
+
+std::wstring Settings::includeFilePath() const
+{
+    return m_includeFilePath;
 }
 
 Settings &Settings::Instance()

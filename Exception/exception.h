@@ -12,8 +12,8 @@ class Exception
 {
 public:
     Exception(const std::wstring &what = std::wstring());
-    std::wstring what() const;
-private:
+    virtual std::wstring what() const;
+protected:
     std::wstring m_information;
 };
 
