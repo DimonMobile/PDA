@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "../Utils/settings.h"
+#include "../Exception/not_found_exception.h"
 #include "../Exception/source_exception.h"
 
 namespace PDA
@@ -23,7 +24,8 @@ namespace Constants
 
 Preprocessor::Preprocessor(const std::string &fileName) : m_lineIndex(0)
 {
-    std::wifstream inputFile(fileName);
+    m_currentFileName = fileName;
+    std::wifstream inputFile(m_currentFileName);
     if (inputFile.is_open())
     {
         while(inputFile)
@@ -36,7 +38,7 @@ Preprocessor::Preprocessor(const std::string &fileName) : m_lineIndex(0)
     }
     else
     {
-        throw PDA::Exception::Exception(L"source file not found");
+        throw PDA::Exception::NotFoundException(std::wstring(fileName.begin(), fileName.end()));
     }
 }
 
@@ -44,12 +46,13 @@ void Preprocessor::execute()
 {
     std::wstring result;
     std::wstringstream stream(m_source);
+    m_haveChanges = false;
     while(stream)
     {
         std::wstring line;
         std::getline(stream, line);
         ++m_lineIndex;
-        if (!line.empty() && line[0] == Constants::directiveChar && line.find_first_of(Constants::includeDirective) == 0)
+        if (!line.empty() && line[0] == Constants::directiveChar && line.find(Constants::includeDirective) == 0)
         {
             size_t firstQuotePos = line.find_first_of(Constants::quoteChar);
             size_t lastQuotePos = line.find_last_of(Constants::quoteChar);
@@ -66,22 +69,31 @@ void Preprocessor::execute()
                     wFileName = includeFilePath + L'/' + wFileName;
                 }
                 std::string fileName(wFileName.begin(), wFileName.end());
-                std::wifstream subFile(fileName);
-                if (!subFile.is_open())
-                    throw PDA::Exception::SourceException(static_cast<int>(m_lineIndex), 0, Constants::scannerType + L':' + wFileName + L" not found.");
-                while(subFile)
+                result.append(L"@нумар " + std::to_wstring(m_lineIndex) + L' ' + wFileName + L'\n');
+                try
                 {
-                    std::wstring currentLine;
-                    std::getline(subFile, currentLine);
-                    result.append(currentLine + L'\n');
+                    Preprocessor innerPreproc(fileName);
+                    innerPreproc.execute();
+                    result.append(innerPreproc.m_source);
+                    result.append(L"@нумар " + std::to_wstring(m_lineIndex) +  L'\n');
                 }
-                result.append(L"@нумар " + std::to_wstring(m_lineIndex) + L'\n');
+                catch (const Exception::NotFoundException &e)
+                {
+                    throw PDA::Exception::SourceException(m_lineIndex, 0, std::wstring(m_currentFileName.begin(), m_currentFileName.end()) + L" missing " + e.what());
+                }
+
             }
+            m_haveChanges = true;
         }
         else
             result.append(line + L'\n');
     }
-    std::wcout << result << std::endl;
+    m_source = result;
+}
+
+const std::wstring &Preprocessor::source() const
+{
+    return m_source;
 }
 
 } // namespace Transducer

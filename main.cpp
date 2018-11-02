@@ -22,6 +22,7 @@ int main(int argc, char **argv)
         PDA::Utils::Settings::Instance().initParams(argc, argv);
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         preprocessor.execute();
+        std::wcout << preprocessor.source() << std::endl;
     }
     catch (const PDA::Exception::InformationException &e)
     {

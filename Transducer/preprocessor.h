@@ -12,9 +12,12 @@ class Preprocessor
 public:
     Preprocessor(const std::string &fileName);
     void execute();
+    const std::wstring &source() const;
 private:
     std::wstring m_source;
+    std::string m_currentFileName;
     size_t m_lineIndex;
+    bool m_haveChanges;
 };
 } // namespace Transducer
 } // namespace PDA
