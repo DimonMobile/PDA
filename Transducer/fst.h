@@ -16,15 +16,15 @@ namespace Transducer
 {
 
 template<typename T = DEFAULT_FST_UNIT>
-struct AbstractEdge
+struct BasicEdge
 {
     std::set<T> m_set;
 
-    AbstractEdge()
+    BasicEdge()
     {
     }
 
-    AbstractEdge(const std::initializer_list<T> &initList)
+    BasicEdge(const std::initializer_list<T> &initList)
     {
         for(const T &item : initList)
         {
@@ -32,56 +32,56 @@ struct AbstractEdge
         }
     }
 
-    AbstractEdge(const AbstractEdge<T> &from)
+    BasicEdge(const BasicEdge<T> &from)
     {
         m_set = from.m_set;
     }
     /// Move semantics constructor
-    AbstractEdge(AbstractEdge<T> &&from)
+    BasicEdge(BasicEdge<T> &&from)
     {
         m_set = std::move(from.m_set);
     }
     /// Move semantics assignment operator
-    AbstractEdge<T>& operator = (AbstractEdge<T> &&from)
+    BasicEdge<T>& operator = (BasicEdge<T> &&from)
     {
         m_set = std::move(from.m_set);
     }
-    AbstractEdge<T>& operator = (const AbstractEdge<T> &from)
+    BasicEdge<T>& operator = (const BasicEdge<T> &from)
     {
         m_set = from.m_set;
     }
 
-    AbstractEdge<T> operator + (const AbstractEdge<T> another)
+    BasicEdge<T> operator + (const BasicEdge<T> another)
     {
-        AbstractEdge<T> result;
+        BasicEdge<T> result;
         result.m_set = m_set;
         result.m_set.insert(another.m_set.begin(), another.m_set.end());
         return result;
     }
 
     template<typename ...Rest>
-    static AbstractEdge<T> create(T first, Rest ...rest)
+    static BasicEdge<T> create(T first, Rest ...rest)
     {
-        AbstractEdge<T> result = create(rest...);
+        BasicEdge<T> result = create(rest...);
         result.m_set.insert(first);
         return result;
     }
 
-    static AbstractEdge<T> create(T first)
+    static BasicEdge<T> create(T first)
     {
-        AbstractEdge<T> result;
+        BasicEdge<T> result;
         result.m_set.insert(first);
         return result;
     }
 };
-typedef AbstractEdge<> Edge;
+typedef BasicEdge<> Edge;
 
 
 template<typename T = DEFAULT_FST_UNIT>
-class AbstractFst
+class BasicFst
 {
 public:
-    typedef std::pair<int, AbstractEdge<T>> Transition;
+    typedef std::pair<int, BasicEdge<T>> Transition;
     struct Vertex
     {
         Vertex() {}
@@ -124,9 +124,9 @@ public:
         }
     };
 
-    AbstractFst() {}
+    BasicFst() {}
 
-    AbstractFst(const std::initializer_list<Vertex> &vertices)
+    BasicFst(const std::initializer_list<Vertex> &vertices)
     {
         for(const Vertex &vertex : vertices)
         {
@@ -185,7 +185,7 @@ private:
     std::vector<Vertex> m_vertices;
     std::list<int> m_pendingVertices;
 };
-typedef AbstractFst<> Fst;
+typedef BasicFst<> Fst;
 
 
 } // namespace Transducer
