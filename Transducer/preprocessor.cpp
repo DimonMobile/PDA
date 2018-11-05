@@ -40,6 +40,7 @@ Preprocessor::Preprocessor(const std::string &fileName) : m_lineIndex(0)
     {
         throw PDA::Exception::NotFoundException(std::wstring(fileName.begin(), fileName.end()));
     }
+    execute();
 }
 
 void Preprocessor::execute()
@@ -73,9 +74,8 @@ void Preprocessor::execute()
                 try
                 {
                     Preprocessor innerPreproc(fileName);
-                    innerPreproc.execute();
                     result.append(innerPreproc.m_source);
-                    result.append(L"@нумар " + std::to_wstring(m_lineIndex) +  L'\n');
+                    result.append(L"@нумар " + std::to_wstring(m_lineIndex) + L' ' + std::wstring(m_currentFileName.begin(), m_currentFileName.end()) +  L'\n');
                 }
                 catch (const Exception::NotFoundException &e)
                 {

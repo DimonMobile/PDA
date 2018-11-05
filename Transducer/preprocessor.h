@@ -11,8 +11,9 @@ class Preprocessor
 {
 public:
     Preprocessor(const std::string &fileName);
-    void execute();
     const std::wstring &source() const;
+private:
+    void execute();
 private:
     std::wstring m_source;
     std::string m_currentFileName;

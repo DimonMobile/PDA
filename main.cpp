@@ -9,11 +9,12 @@
 #include "Exception/information_exception.h"
 #include "Exception/params_exception.h"
 #include "Transducer/preprocessor.h"
+#include "Transducer/tokenizer.h"
 
 
 int main(int argc, char **argv)
 {
-    std::setlocale(LC_ALL, "be_BY.UTF8");
+    std::setlocale(LC_ALL, "ru_RU.UTF8");
     std::locale loc(std::locale(), new std::codecvt_utf8<wchar_t>);
     std::locale::global(loc);
 
@@ -21,8 +22,7 @@ int main(int argc, char **argv)
     {
         PDA::Utils::Settings::Instance().initParams(argc, argv);
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
-        preprocessor.execute();
-        std::wcout << preprocessor.source() << std::endl;
+        PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
     }
     catch (const PDA::Exception::InformationException &e)
     {
