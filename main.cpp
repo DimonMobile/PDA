@@ -14,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-    std::setlocale(LC_ALL, "ru_RU.UTF8");
+    std::setlocale(LC_ALL, "en_US.UTF-8");
     std::locale loc(std::locale(), new std::codecvt_utf8<wchar_t>);
     std::locale::global(loc);
 
