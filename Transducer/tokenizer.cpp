@@ -149,9 +149,11 @@ void Tokenizer::commitToken()
 {
     if (m_token.empty())
         return;
-    std::wcout << m_token << std::endl;
+    //std::wcout << m_token << std::endl;
     if (!m_fst.execute(m_token))
         std::wcout << L"***\t***Не распознан" << std::endl;
+    else
+        std::wcout << m_fst.userData.asWChar;
     m_token.clear();
 }
 

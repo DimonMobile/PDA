@@ -11,20 +11,34 @@ namespace Defaults
 {
     namespace Constants
     {
-        const wchar_t varToken          = L'v';
-        const wchar_t doubleToken       = L'd';
-        const wchar_t intToken          = L'i';
-        const wchar_t endToken          = L'}';
-        const wchar_t boolToken         = L'b';
-        const wchar_t printToken        = L'p';
-        const wchar_t returnToken       = L'r';
-        const wchar_t whileToken        = L'w';
-        const wchar_t mainToken         = L'm';
-        const wchar_t breakToken        = L'|';
-        const wchar_t voidToken         = L' ';
-        const wchar_t stringToken       = L's';
-        const wchar_t askToken          = L'a';
-        const wchar_t createToken       = L'c';
+        const wchar_t varToken              = L'v';
+        const wchar_t endToken              = L'}';
+        const wchar_t typeToken             = L't';
+        const wchar_t printToken            = L'p';
+        const wchar_t returnToken           = L'r';
+        const wchar_t whileToken            = L'w';
+        const wchar_t mainToken             = L'm';
+        const wchar_t breakToken            = L'|';
+        const wchar_t stringToken           = L's';
+        const wchar_t askToken              = L'a';
+        const wchar_t createFunctionToken   = L'f';
+        const wchar_t identifierToken       = L'i';
+        const wchar_t conditionToken        = L'c';
+        const wchar_t literalToken          = L'l';
+        const wchar_t plusToken             = L'+';
+        const wchar_t minusToken            = L'-';
+        const wchar_t starToken             = L'*';
+        const wchar_t slashToken            = L'/';
+        const wchar_t leftBraceToken        = L'(';
+        const wchar_t rightBraceToken       = L')';
+        const wchar_t semicolonToken        = L';';
+        const wchar_t dotDotToken           = L':';
+        const wchar_t greaterToken          = L'>';
+        const wchar_t greaterOrEqualToken   = L'≥';
+        const wchar_t asignmentToken        = L'=';
+        const wchar_t compareToken          = L'≡';
+        const wchar_t lessToken             = L'<';
+        const wchar_t lessOrEqualToken      = L'≤';
     }
 
     Transducer::Fst fst()
@@ -75,7 +89,7 @@ namespace Defaults
 /*30 */         ,   Fst::Vertex( _(31, Edge::create(L'н')) )
 /*31 */         ,   Fst::Vertex( _(32, Edge::create(L'а')) )
 /*32 */         ,   Fst::Vertex( _(33, Edge::create(L'е')) )
-/*33 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::doubleToken;})
+/*33 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::typeToken;})
 /*34 */         ,   Fst::Vertex( _(35, Edge::create(L'а')) )
 /*35 */         ,   Fst::Vertex( _(36, Edge::create(L'н')) )
 /*36 */         ,   Fst::Vertex( _(37, Edge::create(L'е')) )
@@ -88,7 +102,7 @@ namespace Defaults
 /*43 */         ,   Fst::Vertex( _(44, Edge::create(L'н')) )
 /*44 */         ,   Fst::Vertex( _(45, Edge::create(L'а')) )
 /*45 */         ,   Fst::Vertex( _(46, Edge::create(L'е')) )
-/*46 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::boolToken;})
+/*46 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::typeToken;})
 /*47 */         ,   Fst::Vertex( _(48, Edge::create(L'а')), _(67, Edge::create(L'у')) )
 /*48 */         ,   Fst::Vertex( _(49, Edge::create(L'к')), _(56, Edge::create(L'л')), _(62, Edge::create(L'ч')) )
 /*49 */         ,   Fst::Vertex( _(50, Edge::create(L'а')), _(53, Edge::create(L'у')) )
@@ -112,7 +126,7 @@ namespace Defaults
 /*67 */         ,   Fst::Vertex( _(68, Edge::create(L'с')) )
 /*68 */         ,   Fst::Vertex( _(69, Edge::create(L'т')) )
 /*69 */         ,   Fst::Vertex( _(70, Edge::create(L'а')) )
-/*70 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::voidToken;})
+/*70 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::typeToken;})
 /*71 */         ,   Fst::Vertex( _(72, Edge::create(L'а')) )
 /*72 */         ,   Fst::Vertex( _(73, Edge::create(L'д')) )
 /*73 */         ,   Fst::Vertex( _(74, Edge::create(L'о')) )
@@ -131,35 +145,35 @@ namespace Defaults
 /*86 */         ,   Fst::Vertex( _(87, Edge::create(L'ы')) )
 /*87 */         ,   Fst::Vertex( _(88, Edge::create(L'ц')) )
 /*88 */         ,   Fst::Vertex( _(89, Edge::create(L'ь')) )
-/*89 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::createToken;})
-/*90 */         ,   Fst::Vertex().setAction([&](){std::wcout << L"цi detected" << std::endl;})
+/*89 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::createFunctionToken;})
+/*90 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::conditionToken;})
 /*91 */         ,   Fst::Vertex( _(92, Edge::create(L'л')) )
 /*92 */         ,   Fst::Vertex( _(93, Edge::create(L'а')) )
 /*93 */         ,   Fst::Vertex( _(94, Edge::create(L'е')) )
-/*94 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::intToken;})
-/*95 */         ,   Fst::Vertex( _(95, digitEdge ), _(96, Edge::create(L'.')) ).setAction([&](){std::wcout << L"целый литерал detected" << std::endl;})
+/*94 */         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::typeToken;})
+/*95 */         ,   Fst::Vertex( _(95, digitEdge ), _(96, Edge::create(L'.')) ).setAction([&](){result.userData.asWChar = Constants::literalToken;})//целый
 /*96 */         ,   Fst::Vertex( _(97, digitEdge) )
-/*97 */         ,   Fst::Vertex( _(97, digitEdge) ).setAction([&](){std::wcout << L"вещественный литерал detected" << std::endl;})
+/*97 */         ,   Fst::Vertex( _(97, digitEdge) ).setAction([&](){result.userData.asWChar = Constants::literalToken;})//вещественный
 /*98 */         ,   Fst::Vertex( _(99, Edge::create(L'x', L'X')) )
 /*99 */         ,   Fst::Vertex( _(100, hexDigitEdge) )
-/*100*/         ,   Fst::Vertex( _(100, hexDigitEdge) ).setAction([&](){std::wcout << L"цэлый шестнадцатеричный литерал detected" << std::endl;})
-/*101*/         ,   Fst::Vertex( _(101, alphaDigitSpaceEdge) ).setAction([&](){std::wcout << L"идентификатор detected" << std::endl;})
-/*102*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"+ detected" << std::endl;})
-/*103*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"- detected" << std::endl;})
-/*104*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"* detected" << std::endl;})
-/*105*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"/ detected" << std::endl;})
+/*100*/         ,   Fst::Vertex( _(100, hexDigitEdge) ).setAction([&](){result.userData.asWChar = Constants::literalToken;})//целый
+/*101*/         ,   Fst::Vertex( _(101, alphaDigitSpaceEdge) ).setAction([&](){result.userData.asWChar = Constants::identifierToken;})
+/*102*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::plusToken;})
+/*103*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::minusToken;})
+/*104*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::starToken;})
+/*105*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::slashToken;})
 /*106*/         ,   Fst::Vertex( _(106, printableEdge), _(107, Edge::create(L'\"')) )
-/*107*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"строковый литерал detected" << std::endl;})
-/*108*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"; detected" << std::endl;})
-/*109*/         ,   Fst::Vertex().setAction([&](){std::wcout << L": detected" << std::endl;})
-/*110*/         ,   Fst::Vertex( _(111, Edge::create(L'=')) ).setAction([&](){std::wcout << L"= detected" << std::endl;})
-/*111*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"== detected" << std::endl;})
-/*112*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"( detected" << std::endl;})
-/*113*/         ,   Fst::Vertex().setAction([&](){std::wcout << L") detected" << std::endl;})
-/*114*/         ,   Fst::Vertex( _(115, Edge::create(L'=')) ).setAction([&](){std::wcout << L"< detected" << std::endl;})
-/*115*/         ,   Fst::Vertex().setAction([&](){std::wcout << L"<= detected" << std::endl;})
-/*116*/         ,   Fst::Vertex( _(117, Edge::create(L'=')) ).setAction([&](){std::wcout << L"> detected" << std::endl;})
-/*117*/         ,   Fst::Vertex().setAction([&](){std::wcout << L">= detected" << std::endl;})
+/*107*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::literalToken;})//строчный
+/*108*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::semicolonToken;})
+/*109*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::dotDotToken;})
+/*110*/         ,   Fst::Vertex( _(111, Edge::create(L'=')) ).setAction([&](){result.userData.asWChar = Constants::asignmentToken;})
+/*111*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::compareToken;})
+/*112*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::leftBraceToken;})
+/*113*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::rightBraceToken;})
+/*114*/         ,   Fst::Vertex( _(115, Edge::create(L'=')) ).setAction([&](){result.userData.asWChar = Constants::lessToken;})
+/*115*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::lessOrEqualToken;})
+/*116*/         ,   Fst::Vertex( _(117, Edge::create(L'=')) ).setAction([&](){result.userData.asWChar = Constants::greaterToken;})
+/*117*/         ,   Fst::Vertex().setAction([&](){result.userData.asWChar = Constants::greaterOrEqualToken;})
         };
         return result;
     }
