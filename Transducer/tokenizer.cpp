@@ -114,7 +114,7 @@ Tokenizer::Tokenizer(const std::wstring &source)
                 quoteStarted = false;
             }
         }
-        else if (currentChar == ':' || currentChar == ';')
+        else if (currentChar == ':' || currentChar == ';' || currentChar == ')' || currentChar == '(')
         {
             if (!m_token.empty())
                 commitToken();

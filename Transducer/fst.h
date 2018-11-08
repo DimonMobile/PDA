@@ -81,6 +81,17 @@ template<typename T = DEFAULT_FST_UNIT>
 class BasicFst
 {
 public:
+    union
+    {
+        bool asBool;
+        unsigned int asUInt;
+        int asInt;
+        double asDouble;
+        float asFloat;
+        char asChar;
+        wchar_t asWChar;
+    } userData;
+public:
     typedef std::pair<int, BasicEdge<T>> Transition;
     struct Vertex
     {
@@ -180,7 +191,6 @@ public:
         m_pendingVertices = std::move(verticesToAdd);
         return true;
     }
-
 private:
     std::vector<Vertex> m_vertices;
     std::list<int> m_pendingVertices;
