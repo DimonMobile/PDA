@@ -5,6 +5,7 @@
 #include <cwctype>
 
 #include "../Utils/settings.h"
+#include "../Utils/defaults.h"
 #include "../Exception/source_exception.h"
 
 namespace PDA
@@ -21,7 +22,7 @@ Tokenizer::Tokenizer(const std::wstring &source)
     int currentPos{0}, currentLine{1};
     bool isStartLine{true}, isPreprocLine{false};
     bool quoteStarted{false};
-
+    m_fst = Utils::Defaults::fst();
 
 
     for(const wchar_t currentChar : source)
@@ -149,6 +150,8 @@ void Tokenizer::commitToken()
     if (m_token.empty())
         return;
     std::wcout << m_token << std::endl;
+    if (!m_fst.execute(m_token))
+        std::wcout << L"***\t***Не распознан" << std::endl;
     m_token.clear();
 }
 
