@@ -2,6 +2,7 @@
 
 #include <cwctype>
 #include <iostream>
+#include <iomanip>
 #include <cwctype>
 
 #include "../Utils/settings.h"
@@ -16,10 +17,11 @@ namespace Transducer
 Tokenizer::Tokenizer(const std::wstring &source)
 {
     int preprocReadingStatus(0);
-    std::wstring readedLineIndex, readedFileName;
+    std::wstring readedLineIndex, tokenFileName;
     std::string currentFileS(PDA::Utils::Settings::Instance().sourceFilePath());
-    std::wstring currentFile(currentFileS.begin(), currentFileS.end());
-    int currentPos{0}, currentLine{1};
+    m_currentFile = std::wstring(currentFileS.begin(), currentFileS.end());
+    m_currentPos  = 0;
+    m_currentLine = 1;
     bool isStartLine{true}, isPreprocLine{false};
     bool quoteStarted{false};
     m_fst = Utils::Defaults::fst();
@@ -59,16 +61,16 @@ Tokenizer::Tokenizer(const std::wstring &source)
             {
                 if (currentChar != L'\n')
                 {
-                    readedFileName += currentChar;
+                    tokenFileName += currentChar;
                 }
                 else
                 {
                     preprocReadingStatus = 0;
-                    currentFile = readedFileName;
-                    currentPos = 0;
-                    currentLine = std::stoi(readedLineIndex);
+                    m_currentFile = tokenFileName;
+                    m_currentPos = 0;
+                    m_currentLine = std::stoi(readedLineIndex);
 
-                    readedFileName.clear();
+                    tokenFileName.clear();
                     readedLineIndex.clear();
                     isPreprocLine = false;
                 }
@@ -78,11 +80,11 @@ Tokenizer::Tokenizer(const std::wstring &source)
         if (isPreprocLine)
             continue;
 
-        ++currentPos;
+        ++m_currentPos;
         if (currentChar == '\n')
         {
-            ++currentLine;
-            currentPos = 0;
+            ++m_currentLine;
+            m_currentPos = 0;
             isStartLine = true;
         }
 
@@ -91,7 +93,7 @@ Tokenizer::Tokenizer(const std::wstring &source)
         {
             if (currentChar == '\n') // newline on quote
             {
-                throw Exception::SourceException(currentLine, currentPos, currentFile + L" didn't closed \"(did you forge to close your string literal?)");
+                throw Exception::SourceException(m_currentLine, m_currentPos, m_currentFile + L" didn't closed \"(did you forge to close your string literal?)");
             }
             m_token += currentChar;
         }
@@ -149,11 +151,10 @@ void Tokenizer::commitToken()
 {
     if (m_token.empty())
         return;
-    //std::wcout << m_token << std::endl;
     if (!m_fst.execute(m_token))
-        std::wcout << L"***\t***Не распознан" << std::endl;
-    else
-        std::wcout << Fst::userData;
+        throw Exception::SourceException(m_currentLine, m_currentPos, L'\"' + m_currentFile + L"\" unknown lexeme: " + m_token);
+    /*else // TODO: token debug flag show text below
+        std::wcout << std::setw(3) << m_currentLine << L':' << std::setw(3) << m_currentPos << L':' << std::setw(100) << std::wstring(m_currentFile.begin(), m_currentFile.end()) << L">" << std::setw(50) << m_token << L" -> " <<  Fst::userData << std::endl;*/
     m_token.clear();
 }
 
