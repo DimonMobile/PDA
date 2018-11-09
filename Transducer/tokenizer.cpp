@@ -153,7 +153,7 @@ void Tokenizer::commitToken()
     if (!m_fst.execute(m_token))
         std::wcout << L"***\t***Не распознан" << std::endl;
     else
-        std::wcout << m_fst.userData.asWChar;
+        std::wcout << Fst::userData;
     m_token.clear();
 }
 

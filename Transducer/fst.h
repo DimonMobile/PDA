@@ -81,22 +81,11 @@ template<typename T = DEFAULT_FST_UNIT>
 class BasicFst
 {
 public:
-    union
-    {
-        bool asBool;
-        unsigned int asUInt;
-        int asInt;
-        double asDouble;
-        float asFloat;
-        char asChar;
-        wchar_t asWChar;
-    } userData;
-public:
+    static T userData;
     typedef std::pair<int, BasicEdge<T>> Transition;
     struct Vertex
     {
         Vertex() {}
-
         template<typename First, typename ...Rest>
         Vertex (const First &first, const Rest&... rest)
         {
@@ -195,8 +184,11 @@ private:
     std::vector<Vertex> m_vertices;
     std::list<int> m_pendingVertices;
 };
-typedef BasicFst<> Fst;
 
+template<typename T>
+T BasicFst<T>::userData=T();
+
+typedef BasicFst<> Fst;
 
 } // namespace Transducer
 } // namespace PDA
