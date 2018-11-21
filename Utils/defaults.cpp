@@ -177,6 +177,17 @@ namespace Defaults
         };
         return result;
     }
+
+    Transducer::Mfst mfst()
+    {
+        using namespace Transducer;
+        Grammar grammar(
+                        Grammar::Rule(L'F', L"D+D", L"D-D")
+                    ,   Grammar::Rule(L'D', L"0", L"1", L"2", L"3", L"4", L"5" , L"6", L"7", L"8", L"9")
+                    );
+
+    }
+
 } // namesapce Defaults
 } // naemsapce Utils
 } // namespace PDA

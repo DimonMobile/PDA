@@ -284,7 +284,10 @@ int Identifier::size()
         return 0;
     case Type::Double:
         return 8;
+    case Type::Function:
+        return 0;
     }
+    return 0;
 }
 
 } // namespace Transducer

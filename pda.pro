@@ -8,7 +8,8 @@ HEADERS += \
     Transducer/preprocessor.h \
     Transducer/tokenizer.h \
     Utils/defaults.h \
-    Utils/settings.h
+    Utils/settings.h \
+    Transducer/mfst.h
 
 SOURCES += \
     Exception/exception.cpp \
