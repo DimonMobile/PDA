@@ -46,7 +46,7 @@ public:
     };
 
     template<typename First, typename ...Rest>
-    Grammar(const First &first, const Rest&... rest)
+    Grammar(const wchar_t startSymbol, const First &first, const Rest&... rest) : m_startSymbol(startSymbol)
     {
         addRules(first, rest...);
     }
@@ -64,13 +64,23 @@ public:
     }
 private:
     std::vector<Rule> m_rules;
+    wchar_t m_startSymbol;
 };
 
 class Mfst
 {
 public:
+    struct State
+    {
+        int m_ruleIndex;
+        int m_chainIndex;
+        std::stack<wchar_t> m_stack;
+        int m_sourcePosition;
+    };
 private:
+    Grammar m_grammar;
     std::wstring m_source;
+    std::stack<State> m_states;
 };
 
 } // namespace Transducer
