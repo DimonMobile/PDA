@@ -23,8 +23,14 @@ int main(int argc, char **argv)
         PDA::Utils::Settings::Instance().initParams(argc, argv);
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
-        tokenizer.printTokens();
-        tokenizer.printIdentifiers();
+        PDA::Transducer::Mfst mfst(PDA::Utils::Defaults::mfst());
+        mfst.setSource(tokenizer.tokens());
+        mfst.step();
+        mfst.step();
+        mfst.step();
+
+        //tokenizer.printTokens();
+        //tokenizer.printIdentifiers();
     }
     catch (const PDA::Exception::InformationException &e)
     {

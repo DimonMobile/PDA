@@ -236,6 +236,11 @@ void Tokenizer::printIdentifiers()
     std::wcout << "=============================================" << std::endl;
 }
 
+std::vector<Token> &Tokenizer::tokens()
+{
+    return m_tokens;
+}
+
 std::wstring Identifier::typeToString(const Identifier::Type tp)
 {
     switch(tp)

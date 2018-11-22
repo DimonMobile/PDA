@@ -182,11 +182,11 @@ namespace Defaults
     {
         using namespace Transducer;
         Grammar grammar(L'S'
-                    ,   Grammar::Rule(L'S', L"E" L"EE")
-                    ,   Grammar::Rule(L'E', L"D+D", L"D-D")
-                    ,   Grammar::Rule(L'D', L"0", L"1", L"2", L"3", L"4", L"5" , L"6", L"7", L"8", L"9")
+                    ,   Grammar::Rule(L'S', L"O" L"OS")
+                    ,   Grammar::Rule(L'O', L"i=E;")
+                    ,   Grammar::Rule(L'E', L"l+l", L"l-l")
                     );
-
+        return Transducer::Mfst(grammar);
     }
 
 } // namesapce Defaults

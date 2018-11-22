@@ -4,6 +4,11 @@
 #include <string>
 #include <stack>
 #include <vector>
+#include <cwctype>
+#include <iostream>
+#include <iomanip>
+
+#include "tokenizer.h"
 
 namespace PDA
 {
@@ -50,7 +55,10 @@ public:
     {
         addRules(first, rest...);
     }
+    Grammar()
+    {
 
+    }
     template<typename First, typename ...Rest>
     void addRules(const First &first, const Rest&... rest)
     {
@@ -62,6 +70,12 @@ public:
     {
         m_rules.push_back(rule);
     }
+
+    wchar_t startSymbol()
+    {
+        return m_startSymbol;
+    }
+
 private:
     std::vector<Rule> m_rules;
     wchar_t m_startSymbol;
@@ -74,12 +88,56 @@ public:
     {
         int m_ruleIndex;
         int m_chainIndex;
-        std::stack<wchar_t> m_stack;
+        std::vector<wchar_t> m_stack;
         int m_sourcePosition;
+        State(const wchar_t startSymbol = L'S') : m_ruleIndex(0), m_chainIndex(0), m_sourcePosition(0)
+        {
+            m_stack.push_back(startSymbol);
+        }
     };
+    void setGrammar(const Grammar &grammar)
+    {
+        m_grammar = grammar;
+    }
+
+    void setSource(const std::vector<Token> &tokens)
+    {
+        m_currentState = State(m_grammar.startSymbol());
+        m_tokens = tokens;
+        while(!m_states.empty())
+            m_states.pop();
+    }
+
+    void step()
+    {
+        std::wcout << std::setw(30) << debugSource() << std::endl;
+    }
+    Mfst(const std::vector<Token> &tokens) : m_tokens(tokens)
+    { }
+    Mfst(const Grammar &grammar) : m_grammar(grammar)
+    { }
 private:
+    std::wstring debugSource()
+    {
+        std::wstring result;
+        for(int i = m_currentState.m_sourcePosition; i <= m_currentState.m_sourcePosition + 5 && m_currentState.m_sourcePosition < static_cast<int>(m_tokens.size()); ++i )
+        {
+            result += m_tokens[static_cast<size_t>(i)].token;
+        }
+        return result;
+    }
+
+    std::wstring debugStack()
+    {
+        for(int i = static_cast<int>(m_currentState.m_stack.size()) - 1; i >= 0; --i)
+        {
+
+        }
+    }
+private:
+    State m_currentState;
     Grammar m_grammar;
-    std::wstring m_source;
+    std::vector<Token> m_tokens;
     std::stack<State> m_states;
 };
 

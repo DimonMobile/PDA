@@ -42,6 +42,7 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens();
     void printIdentifiers();
+    std::vector<Token> &tokens();
 private:
     void commitToken();
 private:
