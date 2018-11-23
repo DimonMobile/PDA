@@ -9,7 +9,7 @@ HEADERS += \
     Transducer/tokenizer.h \
     Utils/defaults.h \
     Utils/settings.h \
-    Transducer/mfst.h
+    Transducer/storefst.h
 
 SOURCES += \
     Exception/exception.cpp \

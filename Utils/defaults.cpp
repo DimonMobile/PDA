@@ -178,7 +178,7 @@ namespace Defaults
         return result;
     }
 
-    Transducer::Mfst mfst()
+    Transducer::StoreFst mfst()
     {
         using namespace Transducer;
         Grammar grammar(L'S'
@@ -186,7 +186,7 @@ namespace Defaults
                     ,   Grammar::Rule(L'O', L"i=E;")
                     ,   Grammar::Rule(L'E', L"l+l", L"l-l")
                     );
-        return Transducer::Mfst(grammar);
+        return StoreFst(grammar);
     }
 
 } // namesapce Defaults

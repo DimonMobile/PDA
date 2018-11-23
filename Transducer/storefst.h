@@ -75,13 +75,16 @@ public:
     {
         return m_startSymbol;
     }
-
+    std::vector<Rule> &rules()
+    {
+        return m_rules;
+    }
 private:
     std::vector<Rule> m_rules;
     wchar_t m_startSymbol;
 };
 
-class Mfst
+class StoreFst
 {
 public:
     struct State
@@ -110,11 +113,31 @@ public:
 
     void step()
     {
-        std::wcout << std::setw(30) << debugSource() << std::endl;
+        std::wcout << std::setw(10) << L"Before";
+        std::wcout << std::setw(30) << debugSource() << std::setw(30) << debugStack() << std::endl;
+
+        if (m_currentState.m_sourcePosition < static_cast<int>(m_tokens.size()))
+        {
+            if (!m_currentState.m_stack.empty())
+            {
+
+            }
+            else // Store empty
+            {
+
+            }
+        }
+        else // End of source
+        {
+
+        }
+
+        std::wcout << std::setw(10) << L"After";
+        std::wcout << std::setw(30) << debugSource() << std::setw(30) << debugStack() << std::endl;
     }
-    Mfst(const std::vector<Token> &tokens) : m_tokens(tokens)
+    StoreFst(const std::vector<Token> &tokens) : m_tokens(tokens)
     { }
-    Mfst(const Grammar &grammar) : m_grammar(grammar)
+    StoreFst(const Grammar &grammar) : m_grammar(grammar)
     { }
 private:
     std::wstring debugSource()
@@ -129,10 +152,13 @@ private:
 
     std::wstring debugStack()
     {
-        for(int i = static_cast<int>(m_currentState.m_stack.size()) - 1; i >= 0; --i)
+        std::wstring result;
+        int n = static_cast<int>(m_currentState.m_stack.size()) - 5;
+        for(int i = static_cast<int>(m_currentState.m_stack.size()) - 1; i >= n && i >= 0; --i)
         {
-
+            result += m_currentState.m_stack[static_cast<size_t>(i)];
         }
+        return result;
     }
 private:
     State m_currentState;

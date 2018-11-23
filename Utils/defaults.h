@@ -1,5 +1,5 @@
 #include "../Transducer/fst.h"
-#include "../Transducer/mfst.h"
+#include "../Transducer/storefst.h"
 
 namespace PDA
 {
@@ -8,7 +8,7 @@ namespace Utils
 namespace Defaults
 {
     Transducer::Fst fst();
-    Transducer::Mfst mfst();
+    Transducer::StoreFst mfst();
 } // namesapce Defaults
 } // naemsapce Utils
 } // namespace PDA
