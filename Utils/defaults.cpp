@@ -182,7 +182,7 @@ namespace Defaults
     {
         using namespace Transducer;
         Grammar grammar(L'S'
-                    ,   Grammar::Rule(L'S', L"O" L"OS")
+                    ,   Grammar::Rule(L'S', L"O", L"OS")
                     ,   Grammar::Rule(L'O', L"i=E;")
                     ,   Grammar::Rule(L'E', L"l+l", L"l-l")
                     );

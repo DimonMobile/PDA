@@ -111,39 +111,122 @@ public:
             m_states.pop();
     }
 
-    void step()
+    bool step()
     {
-        std::wcout << std::setw(10) << L"Before";
-        std::wcout << std::setw(30) << debugSource() << std::setw(30) << debugStack() << std::endl;
-
         if (m_currentState.m_sourcePosition < static_cast<int>(m_tokens.size()))
         {
             if (!m_currentState.m_stack.empty())
             {
+                if (!isTerminalOnTop())
+                {
+                    m_currentState.m_ruleIndex = findRule(m_currentState.m_stack.back());
+                    if (m_currentState.m_ruleIndex == -1)
+                    {
+                        std::wcerr << std::setw(10) << "Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
+                        return false;
+                    }
+                    std::wcout << std::setw(10) << "Expand NT " << m_currentState.m_stack.back() << " with chain[" << m_currentState.m_chainIndex << "]: "
+                               << ((m_currentState.m_chainIndex < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
+                                m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex)].m_chain : L"<EMPTY>") << std::endl;
 
+                    m_states.push(m_currentState);
+                    expandCurrentNTerminal();
+                }
+                else
+                {
+                    if (m_currentState.m_stack.back() == m_tokens[static_cast<size_t>(m_currentState.m_sourcePosition)].token)
+                    {
+                        ++m_currentState.m_sourcePosition;
+                        m_currentState.m_stack.pop_back();
+                    }
+                    else
+                    {
+                        std::wcout << std::setw(10) << "Stack and source mismatch -> rollback and trying next chain..." << std::endl;
+                        if (m_states.empty())
+                        {
+                            std::wcerr << std::setw(10) << "Error: stack empty" << std::endl;
+                            return false;
+                        }
+                        rollback();
+                    }
+                }
             }
             else // Store empty
             {
-
+                std::wcout << std::setw(10) << "Store empty -> rollback and trying next chain..." << std::endl;
+                if (m_states.empty())
+                {
+                    std::wcerr << std::setw(10) << "Error: stack empty" << std::endl;
+                    return false;
+                }
+                rollback();
             }
         }
         else // End of source
         {
-
+            std::wcout << std::setw(10) << "Source empty" << std::endl;
+            return false;
         }
-
-        std::wcout << std::setw(10) << L"After";
-        std::wcout << std::setw(30) << debugSource() << std::setw(30) << debugStack() << std::endl;
+        debugLine();
+        return true;
+    }
+    void debugLine()
+    {
+        std::wcout << '[' << std::setw(30) << std::right << debugSource() << "] [" << std::setw(30) << std::left << debugStack() << ']' << std::endl;
     }
     StoreFst(const std::vector<Token> &tokens) : m_tokens(tokens)
     { }
     StoreFst(const Grammar &grammar) : m_grammar(grammar)
     { }
 private:
+    bool rollback()
+    {
+        do
+        {
+            if (m_states.empty())
+                return false;
+            m_currentState = m_states.top();
+            m_states.pop();
+            ++m_currentState.m_chainIndex;
+        } while (m_currentState.m_chainIndex >= static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size()));
+        return true;
+    }
+
+    void expandCurrentNTerminal()
+    {
+        m_currentState.m_stack.pop_back();
+        if ( m_currentState.m_chainIndex >= static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size()))
+        {
+            rollback();
+            return;
+        }
+        std::wstring currentChain = m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex)].m_chain;
+        for(auto it = currentChain.crbegin(); it != currentChain.crend(); ++it)
+            m_currentState.m_stack.push_back(*it);
+    }
+
+    int findRule(const wchar_t nt)
+    {
+        if (m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_left == nt)
+            return m_currentState.m_ruleIndex;
+        for(size_t i = 0 ; i < m_grammar.rules().size(); ++i)
+            if (m_grammar.rules()[i].m_left == nt)
+                return static_cast<int>(i);
+        return -1;
+    }
+
+    bool isTerminalOnTop()
+    {
+        if ( iswupper(static_cast<wint_t>(m_currentState.m_stack.back())) )
+            return false;
+        else
+            return true;
+    }
+
     std::wstring debugSource()
     {
         std::wstring result;
-        for(int i = m_currentState.m_sourcePosition; i <= m_currentState.m_sourcePosition + 5 && m_currentState.m_sourcePosition < static_cast<int>(m_tokens.size()); ++i )
+        for(int i = m_currentState.m_sourcePosition; (i <= m_currentState.m_sourcePosition + 25) && (i < static_cast<int>(m_tokens.size())); ++i )
         {
             result += m_tokens[static_cast<size_t>(i)].token;
         }
@@ -153,7 +236,7 @@ private:
     std::wstring debugStack()
     {
         std::wstring result;
-        int n = static_cast<int>(m_currentState.m_stack.size()) - 5;
+        int n = static_cast<int>(m_currentState.m_stack.size()) - 25;
         for(int i = static_cast<int>(m_currentState.m_stack.size()) - 1; i >= n && i >= 0; --i)
         {
             result += m_currentState.m_stack[static_cast<size_t>(i)];

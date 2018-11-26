@@ -25,9 +25,16 @@ int main(int argc, char **argv)
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
         PDA::Transducer::StoreFst mfst(PDA::Utils::Defaults::mfst());
         mfst.setSource(tokenizer.tokens());
-        mfst.step();
-        mfst.step();
-        mfst.step();
+        mfst.debugLine();
+
+        bool mres;
+        for(int i = 0 ; i <100 ;++i)
+            mfst.step();
+/*        do
+        {
+            mres = mfst.step();
+        }while(mres);*/
+
 
         //tokenizer.printTokens();
         //tokenizer.printIdentifiers();

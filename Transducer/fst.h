@@ -170,9 +170,7 @@ public:
             for(const Transition& currentTransition : currentVertex.m_transitions)
             {
                 if(currentTransition.second.m_set.find(ch) != currentTransition.second.m_set.end())
-                {
                     verticesToAdd.push_back(currentTransition.first);
-                }
             }
         }
         if (verticesToAdd.empty())
