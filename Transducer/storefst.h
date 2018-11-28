@@ -10,6 +10,7 @@
 
 #include "tokenizer.h"
 #include "Exception/source_exception.h"
+#include "Utils/settings.h"
 
 namespace PDA
 {
@@ -137,12 +138,14 @@ public:
                     }
                     if (m_currentState.m_ruleIndex == -1)
                     {
-                        std::wcerr << std::setw(10) << L"Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
+                        if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                            std::wcerr << std::setw(10) << L"Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
                         raise(L"Grammar error, no rule");
                     }
-                    std::wcout << std::setw(10) << L"Expand NT " << m_currentState.m_stack.back() << L" with chain[" << m_currentState.m_chainIndex + 1 << L"]: "
-                               << ((m_currentState.m_chainIndex + 1 < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
-                                m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex + 1)].m_chain : L"<EMPTY>") << std::endl;
+                    if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                        std::wcout << std::setw(10) << L"Expand NT " << m_currentState.m_stack.back() << L" with chain[" << m_currentState.m_chainIndex + 1 << L"]: "
+                                   << ((m_currentState.m_chainIndex + 1 < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
+                                    m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex + 1)].m_chain : L"<EMPTY>") << std::endl;
 
                     m_states.push(m_currentState);
                     expandCurrentNTerminal();
@@ -156,23 +159,27 @@ public:
                     }
                     else
                     {
-                        std::wcout << std::setw(10) << L"Stack and source mismatch -> rollback and trying next chain..." << std::endl;
+                        if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                            std::wcout << std::setw(10) << L"Stack and source mismatch -> rollback and trying next chain..." << std::endl;
                         rollback();
                     }
                 }
             }
             else // Store empty
             {
-                std::wcout << std::setw(10) << L"Store empty -> rollbacking and trying next chain..." << std::endl;
+                if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                    std::wcout << std::setw(10) << L"Store empty -> rollbacking and trying next chain..." << std::endl;
                 rollback();
             }
         }
         else // End of source
         {
-            std::wcout << std::setw(10) << L"Source empty" << std::endl;
+            if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                std::wcout << std::setw(10) << L"Source empty" << std::endl;
             if (m_currentState.m_stack.empty())
             {
-                std::wcout << std::setw(10) << L"Parsing complete" << std::endl;
+                if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+                    std::wcout << std::setw(10) << L"Parsing complete" << std::endl;
                 return false;
             }
             else
@@ -185,7 +192,8 @@ public:
     }
     void debugLine()
     {
-        std::wcout << '[' << std::setw(30) << std::right << debugSource() << "] [" << std::setw(30) << std::left << debugStack() << ']' << std::endl;
+        if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+            std::wcout << '[' << std::setw(30) << std::right << debugSource() << "] [" << std::setw(30) << std::left << debugStack() << ']' << std::endl;
     }
     StoreFst(const std::vector<Token> &tokens) : m_tokens(tokens)
     { }

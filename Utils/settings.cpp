@@ -39,6 +39,7 @@ void Settings::initParams(int argc, char **argv)
 {
     m_isHelp = false;
     m_isVersion = false;
+    m_syntaxTraceEnable = false;
 
     for(int i = 1 ; i < argc; ++i)
     {
@@ -110,6 +111,11 @@ Settings::Settings()
 std::wstring Settings::includeFilePath() const
 {
     return m_includeFilePath;
+}
+
+bool Settings::isSyntaxTraceEnabled() const
+{
+    return m_syntaxTraceEnable;
 }
 
 Settings &Settings::Instance()

@@ -20,6 +20,8 @@ public:
     std::string sourceFilePath() const;
     std::wstring includeFilePath() const;
 
+    bool isSyntaxTraceEnabled() const;
+
     Settings(const Settings&) = delete;
     void operator = (const Settings&) = delete;
 
@@ -28,6 +30,7 @@ private:
     std::wstring m_logFilePath;
     std::wstring m_sourceFilePath;
     std::wstring m_includeFilePath;
+    bool m_syntaxTraceEnable;
     bool m_isVersion;
     bool m_isHelp;
 };
