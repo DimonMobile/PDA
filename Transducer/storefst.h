@@ -9,6 +9,7 @@
 #include <iomanip>
 
 #include "tokenizer.h"
+#include "Exception/source_exception.h"
 
 namespace PDA
 {
@@ -46,8 +47,15 @@ public:
             m_chains.push_back(Chain(t));
         }
 
+        Rule &setErrorString(const std::wstring &info)
+        {
+            m_errorString = info;
+            return *this;
+        }
+
         wchar_t m_left;
         std::vector<Chain> m_chains;
+        std::wstring m_errorString;
     };
 
     template<typename First, typename ...Rest>
@@ -55,10 +63,12 @@ public:
     {
         addRules(first, rest...);
     }
+
     Grammar()
     {
 
     }
+
     template<typename First, typename ...Rest>
     void addRules(const First &first, const Rest&... rest)
     {
@@ -93,7 +103,7 @@ public:
         int m_chainIndex;
         std::vector<wchar_t> m_stack;
         int m_sourcePosition;
-        State(const wchar_t startSymbol = L'S') : m_ruleIndex(0), m_chainIndex(0), m_sourcePosition(0)
+        State(const wchar_t startSymbol = L'S') : m_ruleIndex(-1), m_chainIndex(-1), m_sourcePosition(0)
         {
             m_stack.push_back(startSymbol);
         }
@@ -103,10 +113,11 @@ public:
         m_grammar = grammar;
     }
 
-    void setSource(const std::vector<Token> &tokens)
+    void setSource(Tokenizer &tokenizer)
     {
         m_currentState = State(m_grammar.startSymbol());
-        m_tokens = tokens;
+        m_tokens = tokenizer.tokens();
+        m_files = &tokenizer.files();
         while(!m_states.empty())
             m_states.pop();
     }
@@ -119,15 +130,19 @@ public:
             {
                 if (!isTerminalOnTop())
                 {
-                    m_currentState.m_ruleIndex = findRule(m_currentState.m_stack.back());
                     if (m_currentState.m_ruleIndex == -1)
                     {
-                        std::wcerr << std::setw(10) << "Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
-                        return false;
+                        m_currentState.m_ruleIndex = findRule(m_currentState.m_stack.back());
+                        m_currentState.m_chainIndex = -1;
                     }
-                    std::wcout << std::setw(10) << "Expand NT " << m_currentState.m_stack.back() << " with chain[" << m_currentState.m_chainIndex << "]: "
-                               << ((m_currentState.m_chainIndex < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
-                                m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex)].m_chain : L"<EMPTY>") << std::endl;
+                    if (m_currentState.m_ruleIndex == -1)
+                    {
+                        std::wcerr << std::setw(10) << L"Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
+                        raise(L"Grammar error, no rule");
+                    }
+                    std::wcout << std::setw(10) << L"Expand NT " << m_currentState.m_stack.back() << L" with chain[" << m_currentState.m_chainIndex + 1 << L"]: "
+                               << ((m_currentState.m_chainIndex + 1 < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
+                                m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex + 1)].m_chain : L"<EMPTY>") << std::endl;
 
                     m_states.push(m_currentState);
                     expandCurrentNTerminal();
@@ -141,31 +156,29 @@ public:
                     }
                     else
                     {
-                        std::wcout << std::setw(10) << "Stack and source mismatch -> rollback and trying next chain..." << std::endl;
-                        if (m_states.empty())
-                        {
-                            std::wcerr << std::setw(10) << "Error: stack empty" << std::endl;
-                            return false;
-                        }
+                        std::wcout << std::setw(10) << L"Stack and source mismatch -> rollback and trying next chain..." << std::endl;
                         rollback();
                     }
                 }
             }
             else // Store empty
             {
-                std::wcout << std::setw(10) << "Store empty -> rollback and trying next chain..." << std::endl;
-                if (m_states.empty())
-                {
-                    std::wcerr << std::setw(10) << "Error: stack empty" << std::endl;
-                    return false;
-                }
+                std::wcout << std::setw(10) << L"Store empty -> rollbacking and trying next chain..." << std::endl;
                 rollback();
             }
         }
         else // End of source
         {
-            std::wcout << std::setw(10) << "Source empty" << std::endl;
-            return false;
+            std::wcout << std::setw(10) << L"Source empty" << std::endl;
+            if (m_currentState.m_stack.empty())
+            {
+                std::wcout << std::setw(10) << L"Parsing complete" << std::endl;
+                return false;
+            }
+            else
+            {
+                raise(L"mismatch");
+            }
         }
         debugLine();
         return true;
@@ -179,12 +192,24 @@ public:
     StoreFst(const Grammar &grammar) : m_grammar(grammar)
     { }
 private:
+    [[noreturn]]
+    void raise(const std::wstring &info)
+    {
+        Token &token = m_tokens[static_cast<size_t>(m_mostState.m_sourcePosition)];
+        if (m_mostState.m_ruleIndex >= 0)
+            throw Exception::SourceException(token.line, token.position - 1, L"\"" + (*m_files)[static_cast<size_t>(token.fileIndex)] + L"\"" + L" " + m_grammar.rules()[static_cast<size_t>(m_mostState.m_ruleIndex)].m_errorString + L" " + info);
+        else
+            throw Exception::SourceException(token.line, token.position - 1, L"\"" + (*m_files)[static_cast<size_t>(token.fileIndex)] + L"\"" + L" " + info);
+    }
+
     bool rollback()
     {
+        if (m_currentState.m_sourcePosition >= m_mostState.m_sourcePosition)
+            m_mostState = m_currentState;
         do
         {
             if (m_states.empty())
-                return false;
+                raise(L"Stack empty");
             m_currentState = m_states.top();
             m_states.pop();
             ++m_currentState.m_chainIndex;
@@ -195,6 +220,7 @@ private:
     void expandCurrentNTerminal()
     {
         m_currentState.m_stack.pop_back();
+        ++m_currentState.m_chainIndex;
         if ( m_currentState.m_chainIndex >= static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size()))
         {
             rollback();
@@ -203,6 +229,7 @@ private:
         std::wstring currentChain = m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex)].m_chain;
         for(auto it = currentChain.crbegin(); it != currentChain.crend(); ++it)
             m_currentState.m_stack.push_back(*it);
+        m_currentState.m_ruleIndex = -1;
     }
 
     int findRule(const wchar_t nt)
@@ -245,8 +272,10 @@ private:
     }
 private:
     State m_currentState;
+    State m_mostState;
     Grammar m_grammar;
     std::vector<Token> m_tokens;
+    std::vector<std::wstring> *m_files;
     std::stack<State> m_states;
 };
 

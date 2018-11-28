@@ -182,9 +182,11 @@ namespace Defaults
     {
         using namespace Transducer;
         Grammar grammar(L'S'
-                    ,   Grammar::Rule(L'S', L"O", L"OS")
-                    ,   Grammar::Rule(L'O', L"i=E;")
-                    ,   Grammar::Rule(L'E', L"l+l", L"l-l")
+                        , Grammar::Rule(L'S', L"T", L"TR").setErrorString(L"expression error")
+                        , Grammar::Rule(L'R', L"+T", L"-T", L"+TR", L"-TR").setErrorString(L"operator error")
+                        , Grammar::Rule(L'T', L"E", L"EF").setErrorString(L"sequence error")
+                        , Grammar::Rule(L'F', L"*E", L"/E", L"*EF", L"/EF").setErrorString(L"hard operator error")
+                        , Grammar::Rule(L'E', L"(S)", L"i", L"l").setErrorString(L"operands error")
                     );
         return StoreFst(grammar);
     }

@@ -24,16 +24,14 @@ int main(int argc, char **argv)
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
         PDA::Transducer::StoreFst mfst(PDA::Utils::Defaults::mfst());
-        mfst.setSource(tokenizer.tokens());
+        mfst.setSource(tokenizer);
         mfst.debugLine();
 
         bool mres;
-        for(int i = 0 ; i <100 ;++i)
-            mfst.step();
-/*        do
+        do
         {
             mres = mfst.step();
-        }while(mres);*/
+        }while(mres);
 
 
         //tokenizer.printTokens();

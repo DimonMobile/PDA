@@ -42,7 +42,8 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens();
     void printIdentifiers();
-    std::vector<Token> &tokens();
+    std::vector<Token> &tokens() ;
+    std::vector<std::wstring> &files() ;
 private:
     void commitToken();
 private:

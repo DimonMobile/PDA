@@ -241,6 +241,11 @@ std::vector<Token> &Tokenizer::tokens()
     return m_tokens;
 }
 
+std::vector<std::wstring> &Tokenizer::files()
+{
+    return m_files;
+}
+
 std::wstring Identifier::typeToString(const Identifier::Type tp)
 {
     switch(tp)
