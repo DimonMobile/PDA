@@ -131,7 +131,7 @@ namespace Defaults
 /*72 */         ,   Fst::Vertex( _(73, Edge::create(L'д')) )
 /*73 */         ,   Fst::Vertex( _(74, Edge::create(L'о')) )
 /*74 */         ,   Fst::Vertex( _(75, Edge::create(L'к')) )
-/*75 */         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::stringToken;})
+/*75 */         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::stringToken; Fst::userData_1 = L's';})
 /*76 */         ,   Fst::Vertex( _(77, Edge::create(L'п')), _(83, Edge::create(L'т')) )
 /*77 */         ,   Fst::Vertex( _(78, Edge::create(L'ы')) )
 /*78 */         ,   Fst::Vertex( _(79, Edge::create(L'т')) )
@@ -151,12 +151,12 @@ namespace Defaults
 /*92 */         ,   Fst::Vertex( _(93, Edge::create(L'а')) )
 /*93 */         ,   Fst::Vertex( _(94, Edge::create(L'е')) )
 /*94 */         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::typeToken;})
-/*95 */         ,   Fst::Vertex( _(95, digitEdge ), _(96, Edge::create(L'.')) ).setAction([&](){Fst::userData = Constants::literalToken;})//целый
+/*95 */         ,   Fst::Vertex( _(95, digitEdge ), _(96, Edge::create(L'.')) ).setAction([&](){Fst::userData = Constants::literalToken; Fst::userData_1 = L'i';})//целый
 /*96 */         ,   Fst::Vertex( _(97, digitEdge) )
-/*97 */         ,   Fst::Vertex( _(97, digitEdge) ).setAction([&](){Fst::userData = Constants::literalToken;})//вещественный
+/*97 */         ,   Fst::Vertex( _(97, digitEdge) ).setAction([&](){Fst::userData = Constants::literalToken; Fst::userData_1 = L'd';})//вещественный
 /*98 */         ,   Fst::Vertex( _(99, Edge::create(L'x', L'X')) )
 /*99 */         ,   Fst::Vertex( _(100, hexDigitEdge) )
-/*100*/         ,   Fst::Vertex( _(100, hexDigitEdge) ).setAction([&](){Fst::userData = Constants::literalToken;})//целый
+/*100*/         ,   Fst::Vertex( _(100, hexDigitEdge) ).setAction([&](){Fst::userData = Constants::literalToken; Fst::userData_1 = L'i';})//целый
 /*101*/         ,   Fst::Vertex( _(101, alphaDigitSpaceEdge) ).setAction([&](){Fst::userData = Constants::identifierToken;})
 /*102*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::plusToken;})
 /*103*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::minusToken;})
