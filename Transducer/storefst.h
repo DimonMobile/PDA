@@ -139,11 +139,11 @@ public:
                     if (m_currentState.m_ruleIndex == -1)
                     {
                         if (Utils::Settings::Instance().isSyntaxTraceEnabled())
-                            std::wcerr << std::setw(10) << L"Error: no rule found(" << m_currentState.m_stack.back() << std::endl;
+                            std::wcerr << std::setw(10) << L"Error: no rule found(" << m_currentState.m_stack.back() << L')' << std::endl;
                         raise(L"Grammar error, no rule");
                     }
                     if (Utils::Settings::Instance().isSyntaxTraceEnabled())
-                        std::wcout << std::setw(10) << L"Expand NT " << m_currentState.m_stack.back() << L" with chain[" << m_currentState.m_chainIndex + 1 << L"]: "
+                        std::wcout << std::setw(10) << L"NT " << m_currentState.m_stack.back() << L"[" << m_currentState.m_chainIndex + 1 << L"]-> "
                                    << ((m_currentState.m_chainIndex + 1 < static_cast<int>(m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains.size())) ?
                                     m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_chains[static_cast<size_t>(m_currentState.m_chainIndex + 1)].m_chain : L"<EMPTY>") << std::endl;
 
@@ -159,16 +159,13 @@ public:
                     }
                     else
                     {
-                        if (Utils::Settings::Instance().isSyntaxTraceEnabled())
-                            std::wcout << std::setw(10) << L"Stack and source mismatch -> rollback and trying next chain..." << std::endl;
                         rollback();
                     }
                 }
             }
             else // Store empty
             {
-                if (Utils::Settings::Instance().isSyntaxTraceEnabled())
-                    std::wcout << std::setw(10) << L"Store empty -> rollbacking and trying next chain..." << std::endl;
+
                 rollback();
             }
         }
@@ -184,7 +181,10 @@ public:
             }
             else
             {
-                raise(L"mismatch");
+                if (m_states.empty())
+                    raise(L"mismatch");
+                else
+                    rollback();
             }
         }
         debugLine();
@@ -193,7 +193,7 @@ public:
     void debugLine()
     {
         if (Utils::Settings::Instance().isSyntaxTraceEnabled())
-            std::wcout << '[' << std::setw(30) << std::right << debugSource() << "] [" << std::setw(30) << std::left << debugStack() << ']' << std::endl;
+            std::wcout << std::right << std::setw(30) << debugSource() << std::setw(30) <<  debugStack() << std::endl;
     }
     StoreFst(const std::vector<Token> &tokens) : m_tokens(tokens)
     { }
@@ -205,13 +205,15 @@ private:
     {
         Token &token = m_tokens[static_cast<size_t>(m_mostState.m_sourcePosition)];
         if (m_mostState.m_ruleIndex >= 0)
-            throw Exception::SourceException(token.line, token.position - 1, L"\"" + (*m_files)[static_cast<size_t>(token.fileIndex)] + L"\"" + L" " + m_grammar.rules()[static_cast<size_t>(m_mostState.m_ruleIndex)].m_errorString + L" " + info);
+            throw Exception::SourceException(token.line, token.position - 1, L"\"" + (*m_files)[static_cast<size_t>(token.fileIndex)] + L"\"" + L" " + m_grammar.rules()[static_cast<size_t>(m_mostState.m_ruleIndex)].m_errorString);
         else
             throw Exception::SourceException(token.line, token.position - 1, L"\"" + (*m_files)[static_cast<size_t>(token.fileIndex)] + L"\"" + L" " + info);
     }
 
     bool rollback()
     {
+        if (Utils::Settings::Instance().isSyntaxTraceEnabled())
+            std::wcout << std::setw(10) << L"Rollback" << std::endl;
         if (m_currentState.m_sourcePosition >= m_mostState.m_sourcePosition)
             m_mostState = m_currentState;
         do
@@ -242,7 +244,7 @@ private:
 
     int findRule(const wchar_t nt)
     {
-        if (m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_left == nt)
+        if ( m_currentState.m_ruleIndex >= 0 && m_currentState.m_ruleIndex < static_cast<int>(m_grammar.rules().size()) && m_grammar.rules()[static_cast<size_t>(m_currentState.m_ruleIndex)].m_left == nt)
             return m_currentState.m_ruleIndex;
         for(size_t i = 0 ; i < m_grammar.rules().size(); ++i)
             if (m_grammar.rules()[i].m_left == nt)

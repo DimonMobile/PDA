@@ -23,6 +23,7 @@ int main(int argc, char **argv)
         PDA::Utils::Settings::Instance().initParams(argc, argv);
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
+        tokenizer.printTokens();
         PDA::Transducer::StoreFst mfst(PDA::Utils::Defaults::mfst());
         mfst.setSource(tokenizer);
         mfst.debugLine();

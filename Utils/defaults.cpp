@@ -182,11 +182,17 @@ namespace Defaults
     {
         using namespace Transducer;
         Grammar grammar(L'S'
-                        , Grammar::Rule(L'S', L"T", L"TR").setErrorString(L"expression error")
-                        , Grammar::Rule(L'R', L"+T", L"-T", L"+TR", L"-TR").setErrorString(L"operator error")
-                        , Grammar::Rule(L'T', L"E", L"EF").setErrorString(L"sequence error")
-                        , Grammar::Rule(L'F', L"*E", L"/E", L"*EF", L"/EF").setErrorString(L"hard operator error")
-                        , Grammar::Rule(L'E', L"(S)", L"i", L"l").setErrorString(L"operands error")
+                        , Grammar::Rule(L'S', L"W").setErrorString(L"Invalid program structure")
+                        , Grammar::Rule(L'W', L"F:tBW", L"F:tB").setErrorString(L"Invalid function")
+                        , Grammar::Rule(L'F', L"fi(A)", L"fm()").setErrorString(L"Function declaration expected")
+                        , Grammar::Rule(L'A', L"i:t", L"i:t;A", L"").setErrorString(L"Function arguments error")
+                        , Grammar::Rule(L'B', L"VvO}").setErrorString(L"Function body error")
+                        , Grammar::Rule(L'O', L"L;O", L"L;").setErrorString(L"Operations sequence error")
+                        , Grammar::Rule(L'L', L"rE", L"ai", L"pE", L"i=E").setErrorString(L"Unexpected operation")
+                        , Grammar::Rule(L'V', L"i:t;", L"i:t;V", L"").setErrorString(L"Variable declaration error")
+                        , Grammar::Rule(L'E', L"(E)", L"P", L"P+E", L"P-E", L"P/E", L"P*E").setErrorString(L"Expression error")
+                        , Grammar::Rule(L'P', L"i", L"l", L"i(J)").setErrorString(L"Not valid operand")
+                        , Grammar::Rule(L'J', L"E", L"E;J").setErrorString(L"Passing function arguments error")
                     );
         return StoreFst(grammar);
     }
