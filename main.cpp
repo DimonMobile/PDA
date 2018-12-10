@@ -10,6 +10,7 @@
 #include "Exception/params_exception.h"
 #include "Transducer/preprocessor.h"
 #include "Transducer/tokenizer.h"
+#include "Transducer/generator.h"
 
 
 int main(int argc, char **argv)
@@ -23,21 +24,19 @@ int main(int argc, char **argv)
         PDA::Utils::Settings::Instance().initParams(argc, argv);
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
-        PDA::Transducer::StoreFst mfst(PDA::Utils::Defaults::mfst());
+        PDA::Transducer::StoreFst storefst(PDA::Utils::Defaults::mfst());
         tokenizer.printTokens();
         tokenizer.printIdentifiers();
-        mfst.setSource(tokenizer);
-        mfst.debugLine();
-
+        storefst.setSource(tokenizer);
+        storefst.debugLine();
         bool mres;
         do
         {
-            mres = mfst.step();
+            mres = storefst.step();
         }while(mres);
+        storefst.printRulesSequence();
 
-
-        //tokenizer.printTokens();
-        //tokenizer.printIdentifiers();
+        PDA::Transducer::Generator generator(tokenizer, storefst);
     }
     catch (const PDA::Exception::InformationException &e)
     {

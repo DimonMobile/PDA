@@ -32,6 +32,7 @@ namespace Defaults
         const wchar_t leftBraceToken        = L'(';
         const wchar_t rightBraceToken       = L')';
         const wchar_t semicolonToken        = L';';
+        const wchar_t commaToken            = L',';
         const wchar_t dotDotToken           = L':';
         const wchar_t greaterToken          = L'>';
         const wchar_t greaterOrEqualToken   = L'≥';
@@ -56,7 +57,7 @@ namespace Defaults
         Edge alphaSpaceEdge = alphaEdge + Edge::create(L'_');
 
         result = {
-/* 0 */             Fst::Vertex( _(1, Edge::create(L'@')), _(15, Edge::create(L'б')), _(20, Edge::create(L'в')), _(27, Edge::create(L'д')), _(34, Edge::create(L'к')), _(39, Edge::create(L'л')), _(47, Edge::create(L'п')), _(71, Edge::create(L'р')), _(76, Edge::create(L'с')), _(82, Edge::create(L'ц')), _(95, digitEdge), _(98, Edge::create(L'0')), _(101, alphaSpaceEdge), _(102, Edge::create(L'+')), _(103, Edge::create(L'-')), _(104, Edge::create(L'*')), _(105, Edge::create(L'/')), _(106, Edge::create(L'\"') ), _(108, Edge::create(L';')), _(109, Edge::create(L':')), _(110, Edge::create(L'=')), _(112, Edge::create(L'(')), _(113, Edge::create(L')')), _(114, Edge::create(L'<')), _(116, Edge::create('>')) )
+/* 0 */             Fst::Vertex( _(1, Edge::create(L'@')), _(15, Edge::create(L'б')), _(20, Edge::create(L'в')), _(27, Edge::create(L'д')), _(34, Edge::create(L'к')), _(39, Edge::create(L'л')), _(47, Edge::create(L'п')), _(71, Edge::create(L'р')), _(76, Edge::create(L'с')), _(82, Edge::create(L'ц')), _(95, digitEdge), _(98, Edge::create(L'0')), _(101, alphaSpaceEdge), _(102, Edge::create(L'+')), _(103, Edge::create(L'-')), _(104, Edge::create(L'*')), _(105, Edge::create(L'/')), _(106, Edge::create(L'\"') ), _(108, Edge::create(L';')), _(109, Edge::create(L':')), _(110, Edge::create(L'=')), _(112, Edge::create(L'(')), _(113, Edge::create(L')')), _(114, Edge::create(L'<')), _(116, Edge::create('>')), _(118, Edge::create(L',')) )
 /* 1 */         ,   Fst::Vertex( _(2, Edge::create(L'н')), _(7, Edge::create(L'у')) )
 /* 2 */         ,   Fst::Vertex( _(3, Edge::create(L'у')) )
 /* 3 */         ,   Fst::Vertex( _(4, Edge::create(L'м')) )
@@ -174,6 +175,7 @@ namespace Defaults
 /*115*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::lessOrEqualToken;})
 /*116*/         ,   Fst::Vertex( _(117, Edge::create(L'=')) ).setAction([&](){Fst::userData = Constants::greaterToken;})
 /*117*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::greaterOrEqualToken;})
+/*118*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::commaToken;})
         };
         return result;
     }
@@ -182,17 +184,16 @@ namespace Defaults
     {
         using namespace Transducer;
         Grammar grammar(L'S'
-                        , Grammar::Rule(L'S', L"W").setErrorString(L"Invalid program structure")
-                        , Grammar::Rule(L'W', L"F:tBW", L"F:tB").setErrorString(L"Invalid function")
-                        , Grammar::Rule(L'F', L"fi(A)", L"fm()").setErrorString(L"Function declaration expected")
-                        , Grammar::Rule(L'A', L"i:t", L"i:t;A", L"").setErrorString(L"Function arguments error")
-                        , Grammar::Rule(L'B', L"VvO}").setErrorString(L"Function body error")
-                        , Grammar::Rule(L'O', L"L;O", L"L;").setErrorString(L"Operations sequence error")
-                        , Grammar::Rule(L'L', L"rE", L"ai", L"pE", L"i=E").setErrorString(L"Unexpected operation")
-                        , Grammar::Rule(L'V', L"i:t;", L"i:t;V", L"").setErrorString(L"Variable declaration error")
-                        , Grammar::Rule(L'E', L"(E)", L"P", L"P+E", L"P-E", L"P/E", L"P*E").setErrorString(L"Expression error")
-                        , Grammar::Rule(L'P', L"i", L"l", L"i(J)").setErrorString(L"Not valid operand")
-                        , Grammar::Rule(L'J', L"E", L"E;J").setErrorString(L"Passing function arguments error")
+                        , Grammar::Rule(L'S', L"D").setErrorString(L"Invalid program structure")
+                        , Grammar::Rule(L'D', L"fi(A):tVvB}D", L"fi(A):tVvB}").setErrorString(L"Invalid function declaration")
+                        , Grammar::Rule(L'A', L"i:t,A", L"i:t", L"").setErrorString(L"Arguments error")
+                        , Grammar::Rule(L'V', L"i:t,V", L"i:t;", L"").setErrorString(L"Variable declare error")
+                        , Grammar::Rule(L'B', L"OB", L"").setErrorString(L"Function body error")
+                        , Grammar::Rule(L'O', L"rE;", L"pE;", L"i=E;").setErrorString(L"Operation errror")
+                        , Grammar::Rule(L'E', L"i+E", L"i-E", L"i*E", L"i/E", L"(E)", L"i", L"l", L"i(C)").setErrorString(L"Invalid expression")
+                        , Grammar::Rule(L'C', L"E,E", L"E", L"t").setErrorString(L"Invalid passing function arguments")
+                        // TODO: expression grammar and many other
+
                     );
         return StoreFst(grammar);
     }

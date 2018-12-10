@@ -50,6 +50,7 @@ struct Identifier
         std::wstring stringValue;
     } value;
 
+    int linkTo;
     int tokenIndex;
     Identifier();
     static std::wstring contextToString(const Context cnt);
@@ -67,6 +68,7 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens();
     void printIdentifiers();
+    int findDeclaration(const std::wstring &wsrc);
     std::vector<Token> &tokens();
     std::vector<std::wstring> &files();
 private:

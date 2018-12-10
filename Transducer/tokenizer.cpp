@@ -1,4 +1,4 @@
-#include "tokenizer.h"
+﻿#include "tokenizer.h"
 
 #include <cwctype>
 #include <iostream>
@@ -145,6 +145,19 @@ Tokenizer::Tokenizer(const std::wstring &source) : m_willFunction(false), m_isPr
             m_token += currentChar;
         }
     }
+
+    for(size_t i = 0 ; i < m_identifiers.size(); ++i)
+    {
+        if(m_identifiers[i].context == Identifier::Context::Default)
+        {
+            int foundIndex = findDeclaration(m_identifiers[i].decoratedName);
+            if (foundIndex != -1)
+            {
+                m_identifiers[i].linkTo = foundIndex;
+                m_identifiers[i].context = Identifier::Context::Link;
+            }
+        }
+    }
 }
 
 void Tokenizer::commitToken()
@@ -208,7 +221,7 @@ void Tokenizer::commitToken()
             m_willFunction = false;
             m_isFunctionArgs = true;
             m_willFunctionName = id.name;
-            id.type = Identifier::Type::Function;
+            id.type = Identifier::Type::Function; // sum(1, sum(2, sum(3, sum(4,5)))*5)
             id.context = Identifier::Context::Declaration;
             m_lastFunctionIdentifierIndex = static_cast<int>(m_identifiers.size());
             id.decoratedName = id.name + L'@';
@@ -296,22 +309,45 @@ void Tokenizer::printTokens()
 
 void Tokenizer::printIdentifiers()
 {
-    std::wcout << std::setfill(L'=') << std::setw(160) << L'\n' << std::setfill(L' ');
+    std::wcout << std::setfill(L'=') << std::setw(190) << L'\n' << std::setfill(L' ');
     std::wcout << std::left << std::setw(5) << L"ID" << std::setw(10) << L"TYPE" << std::setw(15) << L"CONTEXT" << std::setw(10) << L"NAME" << std::setw(20) << L"DECORATED"
-               << std::setw(10) << L"RETTYPE" << std::setw(5) << L"ROW" << std::setw(5) << L"COL"
+               << std::setw(30) << L"VALUE" << std::setw(10) << L"RETTYPE" << std::setw(5) << L"ROW" << std::setw(5) << L"COL"
                << std::setw(80) << L"FILENAME" << std::endl;
     int id{0};
     for(Identifier &identifier : m_identifiers)
     {
         std::wcout << std::setw(5) << id++ << std::setw(10) << Identifier::typeToString(identifier.type) << std::setw(15) << Identifier::contextToString(identifier.context)
                    << std::setw(10) << identifier.name
-                   << std::setw(20) << identifier.decoratedName << std::setw(10)
-                   << Identifier::typeToString(identifier.returnType) << std::setw(5)
+                   << std::setw(20) << identifier.decoratedName << std::setw(30);
+        if (identifier.context == Identifier::Context::Literal)
+        {
+            if (identifier.type == Identifier::Type::String)
+                std::wcout << identifier.value.stringValue;
+            else if (identifier.type == Identifier::Type::Integer || identifier.type == Identifier::Type::Bool)
+                std::wcout << identifier.value.intValue;
+            else if (identifier.type == Identifier::Type::Double)
+                std::wcout << identifier.value.doubleValue;
+            else
+                std::wcout << L"";
+        }
+        else
+            std::wcout << L"";
+
+        std::wcout << std::setw(10) << Identifier::typeToString(identifier.returnType) << std::setw(5)
                    << m_tokens[static_cast<size_t>(identifier.tokenIndex)].line << std::setw(5)
                    << m_tokens[static_cast<size_t>(identifier.tokenIndex)].position - static_cast<int>(identifier.name.size())
                    << std::setw(80) <<  m_files[static_cast<size_t>(m_tokens[static_cast<size_t>(identifier.tokenIndex)].fileIndex)] << std::endl;
     }
-    std::wcout << std::setfill(L'=') << std::setw(160) << L' ' << std::setfill(L' ') << std::endl;
+    std::wcout << std::setfill(L'=') << std::setw(190) << L' ' << std::setfill(L' ') << std::endl;
+}
+
+int Tokenizer::findDeclaration(const std::wstring &wsrc)
+{
+    for(int i = static_cast<int>(m_identifiers.size() - 1) ; i>= 0; --i)
+        if ( (m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Declaration || m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Argument)
+             && m_identifiers[static_cast<size_t>(i)].decoratedName == wsrc)
+            return i;
+    return -1;
 }
 
 std::vector<Token> &Tokenizer::tokens()
@@ -324,10 +360,12 @@ std::vector<std::wstring> &Tokenizer::files()
     return m_files;
 }
 
-Identifier::Identifier()
+Identifier::Identifier() : linkTo(-1)
 {
     type = Type::Undefined;
+    returnType = Type::Undefined;
     context = Context::Default;
+
 }
 
 std::wstring Identifier::contextToString(const Identifier::Context cnt)
@@ -398,6 +436,8 @@ std::wstring Identifier::typeToString(const Identifier::Type tp)
         return L"цэлае";
     case Type::String:
         return L"радок";
+    case Type::Undefined:
+        return L"#";
     }
     return std::wstring();
 }
