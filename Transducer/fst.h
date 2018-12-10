@@ -81,7 +81,7 @@ template<typename T = DEFAULT_FST_UNIT>
 class BasicFst
 {
 public:
-    static T userData;
+    static T userData, userData_1;
     typedef std::pair<int, BasicEdge<T>> Transition;
     struct Vertex
     {
@@ -185,6 +185,8 @@ private:
 
 template<typename T>
 T BasicFst<T>::userData=T();
+template<typename T>
+T BasicFst<T>::userData_1=T();
 
 typedef BasicFst<> Fst;
 

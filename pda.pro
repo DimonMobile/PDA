@@ -9,7 +9,8 @@ HEADERS += \
     Transducer/tokenizer.h \
     Utils/defaults.h \
     Utils/settings.h \
-    Transducer/storefst.h
+    Transducer/storefst.h \
+    Transducer/generator.h
 
 SOURCES += \
     Exception/exception.cpp \
@@ -21,4 +22,5 @@ SOURCES += \
     Transducer/tokenizer.cpp \
     Utils/defaults.cpp \
     Utils/settings.cpp \
-    main.cpp
+    main.cpp \
+    Transducer/generator.cpp

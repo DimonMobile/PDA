@@ -190,6 +190,14 @@ public:
         debugLine();
         return true;
     }
+    void printRulesSequence()
+    {
+        while(!m_states.empty())
+        {
+            std::wcout << m_grammar.rules()[m_states.top().m_ruleIndex].m_left << L" - > " << m_grammar.rules()[m_states.top().m_ruleIndex].m_chains[m_states.top().m_chainIndex + 1].m_chain  << std::endl;
+            m_states.pop();
+        }
+    }
     void debugLine()
     {
         if (Utils::Settings::Instance().isSyntaxTraceEnabled())

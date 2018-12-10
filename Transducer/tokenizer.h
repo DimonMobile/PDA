@@ -21,19 +21,45 @@ struct Token
 struct Identifier
 {
     std::wstring name;
+    std::wstring decoratedName;
     enum class Type
     {
+        Undefined,
         Integer,
         Bool,
         String,
         Double,
         Function
     } type, returnType;
-    int tokenIndex;
-    static std::wstring typeToString(const Type tp);
+    enum class Context
+    {
+        Default,
+        Declaration,
+        Link,
+        Argument,
+        Literal
+    } context;
 
+    struct IdentifierValue
+    {
+        union
+        {
+            long long intValue; // keeps string length in case of string type [Format: <8 bytes length><string data...>]
+            double doubleValue;
+        };
+        std::wstring stringValue;
+    } value;
+
+    int linkTo;
+    int tokenIndex;
+    Identifier();
+    static std::wstring contextToString(const Context cnt);
+    static Type typeFromWChar(const wchar_t ch);
+    static wchar_t typeToWChar(const Type tp);
+    static std::wstring typeToString(const Type tp);
     static Type typeFromString(const std::wstring &tp);
     int size();
+
 };
 
 class Tokenizer
@@ -42,13 +68,15 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens();
     void printIdentifiers();
-    std::vector<Token> &tokens() ;
-    std::vector<std::wstring> &files() ;
+    int findDeclaration(const std::wstring &wsrc);
+    std::vector<Token> &tokens();
+    std::vector<std::wstring> &files();
 private:
     void commitToken();
 private:
-    bool m_willFunction, m_isPrevTokenTypeToken;
-    int m_lastFunctionTokenIndex;
+    bool m_willFunction, m_isPrevTokenTypeToken, m_isFunctionArgs;
+    std::wstring m_willFunctionName;
+    int m_lastFunctionIdentifierIndex;
     int m_currentPos, m_currentLine;
     std::wstring m_currentFile;
     std::wstring m_token;
