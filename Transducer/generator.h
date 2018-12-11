@@ -49,10 +49,8 @@ public:
 private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
-    bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);
 private:
-    int m_mainFunctionExists; // 0 - undefined, 1 - true, 2 - false
     const Tokenizer &m_tokenizer;
     const StoreFst &m_storeFst;
 };
