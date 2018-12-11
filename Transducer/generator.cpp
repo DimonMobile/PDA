@@ -14,6 +14,8 @@ namespace Transducer
 
 namespace Constants
 {
+    const std::wstring globlStartLabel = L".globl _start";
+    const std::wstring startLabel = L"_start:";
     const std::wstring firstLineComment = L"# PDA v1.0 Complier; LGPL3 https://www.gnu.org/licenses/lgpl-3.0.en.html ";
     const std::wstring sectionDataString = L".section .data";
     const std::wstring sectionUninitializedDataString = L".section .bss";
@@ -31,10 +33,16 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_t
     writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
+    if (isMainFunctionExists())
+    {
+        ostream << Constants::globlStartLabel << std::endl;
+        ostream << Constants::startLabel << std::endl;
+        ostream << call(  hash(m_tokenizer.identifiers()[static_cast<size_t>(m_mainFunctionExists)].decoratedName) ) << std::endl;
+        ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
+        ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
+        ostream << syscall() << std::endl;
+    }
     writeFunctions(ostream);
-    ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
-    ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
-    ostream << syscall() << std::endl;
 }
 
 wchar_t Generator::registerSuffix(const Register &source)
@@ -54,6 +62,13 @@ wchar_t Generator::registerSuffix(const Register &source)
         }
     }
     return L'q';
+}
+
+std::wstring Generator::call(const std::wstring &label)
+{
+    std::wstring result = L"call\t";
+    result += label;
+    return result;
 }
 
 std::wstring Generator::comment(const std::wstring &source)
@@ -145,6 +160,27 @@ void Generator::writeFunctions(std::wostream &stream)
             stream << ret() << std::endl;
         }
     }
+}
+
+
+bool Generator::isMainFunctionExists()
+{
+    if (m_mainFunctionExists >= 0)
+        return true;
+    else if (m_mainFunctionExists == -2)
+        return false;
+
+    const auto &ids = m_tokenizer.identifiers();
+    for(size_t i = 0 ; i < ids.size(); ++i)
+    {
+        if (ids[i].type == Identifier::Type::Function && ids[i].name == L"пачатак")
+        {
+            m_mainFunctionExists = static_cast<int>(i);
+            return true;
+        }
+    }
+    m_mainFunctionExists = -2;
+    return false;
 }
 
 std::wstring Generator::hash(const std::wstring &source)
