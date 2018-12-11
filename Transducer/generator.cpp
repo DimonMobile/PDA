@@ -22,7 +22,7 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_mainFunctionExists(0), m_tokenizer(tokenizer), m_storeFst(storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_tokenizer(tokenizer), m_storeFst(storeFst)
 {
     UNUSED(tokenizer);
     UNUSED(storeFst);
@@ -161,6 +161,7 @@ void Generator::writeFunctions(std::wostream &stream)
         }
     }
 }
+
 
 bool Generator::isMainFunctionExists()
 {
