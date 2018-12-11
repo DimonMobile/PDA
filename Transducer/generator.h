@@ -39,6 +39,7 @@ public:
 
     static wchar_t registerSuffix(const Register &source);
     //  ASM functions
+    static std::wstring call(const std::wstring &label);
     static std::wstring comment(const std::wstring &source);
     static std::wstring push(const Register &source);
     static std::wstring pop(const Register &dest);
@@ -52,7 +53,7 @@ private:
     bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);
 private:
-    int m_mainFunctionExists; // 0 - undefined, 1 - true, 2 - false
+    int m_mainFunctionExists; // -1 - undefined, -2 false, >=0 - true,
     const Tokenizer &m_tokenizer;
     const StoreFst &m_storeFst;
 };
