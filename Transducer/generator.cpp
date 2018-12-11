@@ -20,7 +20,7 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_tokenizer(tokenizer), m_storeFst(storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_mainFunctionExists(0), m_tokenizer(tokenizer), m_storeFst(storeFst)
 {
     UNUSED(tokenizer);
     UNUSED(storeFst);
@@ -32,9 +32,13 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_t
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
     writeFunctions(ostream);
-    ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
-    ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
-    ostream << syscall() << std::endl;
+
+    if (isMainFunctionExists())
+    {
+        ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
+        ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
+        ostream << syscall() << std::endl;
+    }
 }
 
 wchar_t Generator::registerSuffix(const Register &source)
@@ -145,6 +149,24 @@ void Generator::writeFunctions(std::wostream &stream)
             stream << ret() << std::endl;
         }
     }
+}
+
+bool Generator::isMainFunctionExists()
+{
+    if (m_mainFunctionExists == 1)
+        return true;
+    else if (m_mainFunctionExists == 2)
+        return false;
+    for(const Identifier &identifier : m_tokenizer.identifiers())
+    {
+        if (identifier.type == Identifier::Type::Function && identifier.name == L"пачатак")
+        {
+            m_mainFunctionExists = 1;
+            return true;
+        }
+    }
+    m_mainFunctionExists = 2;
+    return false;
 }
 
 std::wstring Generator::hash(const std::wstring &source)
