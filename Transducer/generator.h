@@ -50,6 +50,7 @@ public:
 private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
+    bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);
 private:
     int m_mainFunctionExists; // -1 - undefined, -2 false, >=0 - true,
