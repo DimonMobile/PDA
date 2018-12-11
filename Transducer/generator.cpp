@@ -31,32 +31,60 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_t
     writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
+    writeFunctions(ostream);
     ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
     ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
     ostream << syscall() << std::endl;
 }
 
-std::wstring Generator::mov(const Register &source, const Register &destination)
+wchar_t Generator::registerSuffix(const Register &source)
 {
-    std::wstring result = L"mov";
     if (source.integer)
     {
         switch(source.size)
         {
         case Register::Size::Full:
-            result += L'q';
-            break;
+            return L'q';
         case Register::Size::Half:
-            result += L'l';
-            break;
+            return L'l';
         case Register::Size::Quarter:
-            result += L'w';
-            break;
+            return L'w';
         case Register::Size::OneEight:
-            result += L'b';
-            break;
+            return L'b';
         }
     }
+    return L'q';
+}
+
+std::wstring Generator::comment(const std::wstring &source)
+{
+    std::wstring result;
+    result = L"\t#***\t" + source + L"\t***#";
+    return result;
+}
+
+std::wstring Generator::push(const Register &source)
+{
+    std::wstring result = L"push";
+    result += registerSuffix(source);
+    result += L'\t';
+    result += L'%' + source.toString();
+    return result;
+}
+
+std::wstring Generator::pop(const Register &dest)
+{
+    std::wstring result = L"pop";
+    result += registerSuffix(dest);
+    result += L'\t';
+    result += L'%' + dest.toString();
+    return result;
+}
+
+std::wstring Generator::mov(const Register &source, const Register &destination)
+{
+    std::wstring result = L"mov";
+    result += registerSuffix(source);
     result += L"\t%";
     result += source.toString();
     result += L",\t%";
@@ -67,27 +95,15 @@ std::wstring Generator::mov(const Register &source, const Register &destination)
 std::wstring Generator::mov(const std::wstring &source, const Register &destination)
 {
     std::wstring result = L"mov";
-    if (destination.integer)
-    {
-        switch(destination.size)
-        {
-        case Register::Size::Full:
-            result += L'q';
-            break;
-        case Register::Size::Half:
-            result += L'l';
-            break;
-        case Register::Size::Quarter:
-            result += L'w';
-            break;
-        case Register::Size::OneEight:
-            result += L'b';
-            break;
-        }
-    }
+    result += registerSuffix(destination);
     result += L"\t" + source;
     result += L",\t%" + destination.toString();
     return result;
+}
+
+std::wstring Generator::ret()
+{
+    return L"ret";
 }
 
 std::wstring Generator::syscall()
@@ -110,6 +126,23 @@ void Generator::writeLiterals(std::wostream &stream)
             else
                 stream << id.value.intValue;
             stream << std::endl;
+        }
+    }
+}
+
+void Generator::writeFunctions(std::wostream &stream)
+{
+    for(const Identifier &identifier : m_tokenizer.identifiers())
+    {
+        if (identifier.type == Identifier::Type::Function)
+        {
+            stream << hash(identifier.decoratedName) << L':' << std::endl;
+            stream << push(Register(Register::StackBase, Register::Size::Full)) << std::endl;
+            stream << mov(Register(Register::StackVertex, Register::Size::Full), Register(Register::StackBase, Register::Size::Full)) << std::endl;
+            stream << comment(L"Function body") << std::endl;
+            stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackVertex, Register::Size::Full)) << std::endl;
+            stream << pop(Register(Register::StackBase, Register::Size::Full)) << std::endl;
+            stream << ret() << std::endl;
         }
     }
 }
@@ -140,6 +173,34 @@ std::wstring Register::toString() const
                 return L"al";
             }
             break;
+        }
+        case StackBase:
+        {
+            switch(size)
+            {
+            case Size::Full:
+                return L"rbp";
+            case Size::Half:
+                return L"ebp";
+            case Size::Quarter:
+                return L"bp";
+            case Size::OneEight:
+                return L"bpl";
+            }
+        }
+        case StackVertex:
+        {
+            switch(size)
+            {
+            case Size::Full:
+                return L"rsp";
+            case Size::Half:
+                return L"esp";
+            case Size::Quarter:
+                return L"sp";
+            case Size::OneEight:
+                return L"spl";
+            }
         }
         case 0:
         {

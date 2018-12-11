@@ -16,7 +16,9 @@ struct Register
     bool integer = true;
     enum
     {
-        ReturnType = 0x50
+        ReturnType = 0x50,
+        StackBase,
+        StackVertex
     };
     enum class Size
     {
@@ -35,11 +37,18 @@ class Generator
 public:
     Generator(const Tokenizer &tokenizer, const StoreFst &storeFst);
 
+    static wchar_t registerSuffix(const Register &source);
+    //  ASM functions
+    static std::wstring comment(const std::wstring &source);
+    static std::wstring push(const Register &source);
+    static std::wstring pop(const Register &dest);
     static std::wstring mov(const Register &source, const Register &destination);
     static std::wstring mov(const std::wstring &source, const Register &destination);
+    static std::wstring ret();
     static std::wstring syscall();
 private:
     void writeLiterals(std::wostream &stream);
+    void writeFunctions(std::wostream &stream);
     static std::wstring hash(const std::wstring &source);
 private:
     const Tokenizer &m_tokenizer;
