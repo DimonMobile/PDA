@@ -274,6 +274,8 @@ void Tokenizer::commitToken()
         id.context = Identifier::Context::Literal;
         id.tokenIndex = static_cast<int>(m_tokens.size()) - 1;
         id.type = Identifier::typeFromWChar(Fst::userData_1);
+        id.decoratedName = Identifier::typeToWChar(id.type);
+        id.decoratedName += L'@' + std::to_wstring(m_tokens[id.tokenIndex].line) + L'@' + std::to_wstring(m_tokens[id.tokenIndex].position);
         if (id.type == Identifier::Type::String)
         {
             id.value.stringValue = m_token;
@@ -292,11 +294,11 @@ void Tokenizer::commitToken()
     m_token.clear();
 }
 
-void Tokenizer::printTokens()
+void Tokenizer::printTokens() const
 {
     std::wcout << "================LEX TABLE=====================" << std::endl;
     int lastLine(1);
-    for(Token &token : m_tokens)
+    for(const Token &token : m_tokens)
     {
         if (token.line != lastLine)
             std::wcout << std::endl;
@@ -307,14 +309,14 @@ void Tokenizer::printTokens()
     std::wcout << "=============================================" << std::endl;
 }
 
-void Tokenizer::printIdentifiers()
+void Tokenizer::printIdentifiers() const
 {
     std::wcout << std::setfill(L'=') << std::setw(190) << L'\n' << std::setfill(L' ');
     std::wcout << std::left << std::setw(5) << L"ID" << std::setw(10) << L"TYPE" << std::setw(15) << L"CONTEXT" << std::setw(10) << L"NAME" << std::setw(20) << L"DECORATED"
                << std::setw(30) << L"VALUE" << std::setw(10) << L"RETTYPE" << std::setw(5) << L"ROW" << std::setw(5) << L"COL"
                << std::setw(80) << L"FILENAME" << std::endl;
     int id{0};
-    for(Identifier &identifier : m_identifiers)
+    for(const Identifier &identifier : m_identifiers)
     {
         std::wcout << std::setw(5) << id++ << std::setw(10) << Identifier::typeToString(identifier.type) << std::setw(15) << Identifier::contextToString(identifier.context)
                    << std::setw(10) << identifier.name
@@ -350,9 +352,19 @@ int Tokenizer::findDeclaration(const std::wstring &wsrc)
     return -1;
 }
 
-std::vector<Token> &Tokenizer::tokens()
+const std::vector<Identifier> &Tokenizer::identifiers() const
+{
+    return m_identifiers;
+}
+
+const std::vector<Token> &Tokenizer::tokens() const
 {
     return m_tokens;
+}
+
+const std::vector<std::wstring> &Tokenizer::files() const
+{
+    return m_files;
 }
 
 std::vector<std::wstring> &Tokenizer::files()
@@ -440,6 +452,15 @@ std::wstring Identifier::typeToString(const Identifier::Type tp)
         return L"#";
     }
     return std::wstring();
+}
+
+std::wstring Identifier::typeToAsm(const Identifier::Type tp)
+{
+    switch(tp)
+    {
+    case Type::Integer:
+        return L".int";
+    }
 }
 
 Identifier::Type Identifier::typeFromString(const std::wstring &tp)

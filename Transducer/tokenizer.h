@@ -57,6 +57,7 @@ struct Identifier
     static Type typeFromWChar(const wchar_t ch);
     static wchar_t typeToWChar(const Type tp);
     static std::wstring typeToString(const Type tp);
+    static std::wstring typeToAsm(const Type tp);
     static Type typeFromString(const std::wstring &tp);
     int size();
 
@@ -66,10 +67,12 @@ class Tokenizer
 {
 public:
     Tokenizer(const std::wstring &source);
-    void printTokens();
-    void printIdentifiers();
+    void printTokens() const;
+    void printIdentifiers() const;
     int findDeclaration(const std::wstring &wsrc);
-    std::vector<Token> &tokens();
+    const std::vector<Identifier> &identifiers() const;
+    const std::vector<Token> &tokens() const;
+    const std::vector<std::wstring> &files() const;
     std::vector<std::wstring> &files();
 private:
     void commitToken();

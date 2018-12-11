@@ -39,7 +39,11 @@ public:
     static std::wstring mov(const std::wstring &source, const Register &destination);
     static std::wstring syscall();
 private:
-
+    void writeLiterals(std::wostream &stream);
+    static std::wstring hash(const std::wstring &source);
+private:
+    const Tokenizer &m_tokenizer;
+    const StoreFst &m_storeFst;
 };
 
 } // namespace Transducer

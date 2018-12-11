@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 
+#include "Utils/misc.h"
+
 #define UNUSED(x) (void)x
 
 namespace PDA
@@ -18,7 +20,7 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_tokenizer(tokenizer), m_storeFst(storeFst)
 {
     UNUSED(tokenizer);
     UNUSED(storeFst);
@@ -26,6 +28,7 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst)
     std::wofstream ostream("result.s");
     ostream << Constants::firstLineComment << std::endl;
     ostream << Constants::sectionDataString << std::endl;
+    writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
     ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
@@ -90,6 +93,30 @@ std::wstring Generator::mov(const std::wstring &source, const Register &destinat
 std::wstring Generator::syscall()
 {
     return L"syscall";
+}
+
+void Generator::writeLiterals(std::wostream &stream)
+{
+    for(const Identifier &id : m_tokenizer.identifiers())
+    {
+        if (id.context == Identifier::Context::Literal)
+        {
+            stream <<  hash(id.decoratedName) << L':' << std::endl;
+            stream << Identifier::typeToAsm(id.type) << L'\t';
+            if (id.type == Identifier::Type::String)
+                stream << id.value.stringValue;
+            else if (id.type == Identifier::Type::Double)
+                stream << id.value.doubleValue;
+            else
+                stream << id.value.intValue;
+            stream << std::endl;
+        }
+    }
+}
+
+std::wstring Generator::hash(const std::wstring &source)
+{
+    return Utils::Misc::toBase64( reinterpret_cast<const unsigned char*>(source.c_str()), source.length() * sizeof(wchar_t));
 }
 
 std::wstring Register::toString() const

@@ -10,7 +10,8 @@ HEADERS += \
     Utils/defaults.h \
     Utils/settings.h \
     Transducer/storefst.h \
-    Transducer/generator.h
+    Transducer/generator.h \
+    Utils/misc.h
 
 SOURCES += \
     Exception/exception.cpp \
@@ -23,4 +24,5 @@ SOURCES += \
     Utils/defaults.cpp \
     Utils/settings.cpp \
     main.cpp \
-    Transducer/generator.cpp
+    Transducer/generator.cpp \
+    Utils/misc.cpp
