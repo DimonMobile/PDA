@@ -54,6 +54,7 @@ public:
 private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
+    void writeGlobalFunctions(std::wostream &stream);
     bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);
 private:
