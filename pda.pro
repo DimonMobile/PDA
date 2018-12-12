@@ -7,11 +7,13 @@ HEADERS += \
     Transducer/fst.h \
     Transducer/preprocessor.h \
     Transducer/tokenizer.h \
+    Transducer/expressiontoken.h \
     Utils/defaults.h \
     Utils/settings.h \
     Transducer/storefst.h \
     Transducer/generator.h \
-    Utils/misc.h
+    Utils/misc.h \
+
 
 SOURCES += \
     Exception/exception.cpp \
@@ -25,4 +27,5 @@ SOURCES += \
     Utils/settings.cpp \
     main.cpp \
     Transducer/generator.cpp \
-    Utils/misc.cpp
+    Utils/misc.cpp \
+    Transducer/expressiontoken.cpp
