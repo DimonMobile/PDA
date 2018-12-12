@@ -18,7 +18,7 @@ struct Register
     {
         ReturnType = 0x50,
         StackBase,
-        StackVertex
+        StackTop
     };
     enum class Size
     {
@@ -39,6 +39,9 @@ public:
 
     static wchar_t registerSuffix(const Register &source);
     //  ASM functions
+    static std::wstring sub(const int source, const Register &dest);
+    static std::wstring sub(const Register &source, const int dest);
+    static std::wstring sub(const Register &source, const std::wstring &dest);
     static std::wstring call(const std::wstring &label);
     static std::wstring comment(const std::wstring &source);
     static std::wstring push(const Register &source);

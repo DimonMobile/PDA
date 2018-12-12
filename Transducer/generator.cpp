@@ -64,6 +64,39 @@ wchar_t Generator::registerSuffix(const Register &source)
     return L'q';
 }
 
+std::wstring Generator::sub(const int source, const Register &dest)
+{
+    std::wstring result = L"sub";
+    result += registerSuffix(dest);
+    result += L'\t';
+    result += L'$' + std::to_wstring(source);
+    result += L",\t%" + dest.toString();
+
+    return result;
+}
+
+std::wstring Generator::sub(const Register &source, const int dest)
+{
+    std::wstring result = L"sub";
+    result += registerSuffix(source);
+    result += L"\t";
+    result += L'%' + source.toString();
+    result += L",\t";
+    result += L"$" + std::to_wstring(dest);
+    return result;
+}
+
+std::wstring Generator::sub(const Register &source, const std::wstring &dest)
+{
+    std::wstring result = L"sub";
+    result += registerSuffix(source);
+    result += L"\t";
+    result += L'%' + source.toString();
+    result += L",\t";
+    result += dest;
+    return result;
+}
+
 std::wstring Generator::call(const std::wstring &label)
 {
     std::wstring result = L"call\t";
@@ -153,9 +186,14 @@ void Generator::writeFunctions(std::wostream &stream)
         {
             stream << hash(identifier.decoratedName) << L':' << std::endl;
             stream << push(Register(Register::StackBase, Register::Size::Full)) << std::endl;
-            stream << mov(Register(Register::StackVertex, Register::Size::Full), Register(Register::StackBase, Register::Size::Full)) << std::endl;
+            stream << mov(Register(Register::StackTop, Register::Size::Full), Register(Register::StackBase, Register::Size::Full)) << std::endl;
+            if (identifier.rbpOffset > 0)
+            {
+                stream << comment(L"Space allocate for variables") << std::endl;
+                stream << sub(identifier.rbpOffset, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+            }
             stream << comment(L"Function body") << std::endl;
-            stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackVertex, Register::Size::Full)) << std::endl;
+            stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackTop, Register::Size::Full)) << std::endl;
             stream << pop(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << ret() << std::endl;
         }
@@ -224,7 +262,7 @@ std::wstring Register::toString() const
                 return L"bpl";
             }
         }
-        case StackVertex:
+        case StackTop:
         {
             switch(size)
             {
