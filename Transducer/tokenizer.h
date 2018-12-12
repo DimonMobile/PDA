@@ -50,6 +50,7 @@ struct Identifier
         std::wstring stringValue;
     } value;
 
+    int rbpOffset;
     int linkTo;
     int tokenIndex;
     Identifier();

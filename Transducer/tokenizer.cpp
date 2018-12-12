@@ -14,7 +14,7 @@ namespace PDA
 namespace Transducer
 {
 
-Tokenizer::Tokenizer(const std::wstring &source) : m_willFunction(false), m_isPrevTokenTypeToken(false), m_isFunctionArgs(false)
+Tokenizer::Tokenizer(const std::wstring &source) : m_willFunction(false),   m_isPrevTokenTypeToken(false), m_isFunctionArgs(false), m_lastFunctionIdentifierIndex(-1)
 {
     int preprocReadingStatus(0);
     std::wstring readedLineIndex, tokenFileName;
@@ -194,7 +194,7 @@ void Tokenizer::commitToken()
             {
                 m_identifiers[m_identifiers.size()-1].type = Identifier::typeFromString(m_token);
 
-                if (m_isFunctionArgs)
+                if (m_isFunctionArgs && m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(m_identifiers.size()))
                 {
                     Identifier &identifier = m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)];
                     identifier.decoratedName = identifier.decoratedName + Identifier::typeToWChar(m_identifiers[m_identifiers.size()-1].type) + L'@';
@@ -202,7 +202,7 @@ void Tokenizer::commitToken()
             }
             else
             {
-                if (m_lastFunctionIdentifierIndex < static_cast<int>(m_identifiers.size())) // range check
+                if (m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(m_identifiers.size())) // range check
                 {
                     m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].returnType = Identifier::typeFromString(m_token);
                 }
@@ -238,7 +238,7 @@ void Tokenizer::commitToken()
     }
     else if (currentToken.token == L')')
     {
-        if (m_isFunctionArgs)
+        if (m_isFunctionArgs && m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(identifiers().size()))
         {
             m_isPrevTokenTypeToken = true;
             m_isFunctionArgs = false;
@@ -255,13 +255,24 @@ void Tokenizer::commitToken()
     }
     else if (currentToken.token == L'v')
     {
+        int summaryOffset = 0;
         for(int i = static_cast<int>(m_identifiers.size()) - 1; i >= 0; --i )
         {
             Identifier &identifier = m_identifiers[static_cast<size_t>(i)];
             if (identifier.context != Identifier::Context::Argument && identifier.type != Identifier::Type::Function)
+            {
                 identifier.context = Identifier::Context::Declaration;
+                summaryOffset += identifier.size();
+                identifier.rbpOffset = summaryOffset;
+            }
             else
+            {
                 break;
+            }
+        }
+        if (m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(identifiers().size()))
+        {
+            m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].rbpOffset = summaryOffset;
         }
     }
     else if (currentToken.token == L'f')
@@ -312,14 +323,14 @@ void Tokenizer::printTokens() const
 void Tokenizer::printIdentifiers() const
 {
     std::wcout << std::setfill(L'=') << std::setw(190) << L'\n' << std::setfill(L' ');
-    std::wcout << std::left << std::setw(5) << L"ID" << std::setw(10) << L"TYPE" << std::setw(15) << L"CONTEXT" << std::setw(10) << L"NAME" << std::setw(20) << L"DECORATED"
+    std::wcout << std::left << std::setw(5) << L"ID" << std::setw(10) << L"TYPE" << std::setw(15) << L"CONTEXT" << std::setw(10) << L"RBPOFFSET" << std::setw(10) << L"NAME" << std::setw(20) << L"DECORATED"
                << std::setw(30) << L"VALUE" << std::setw(10) << L"RETTYPE" << std::setw(5) << L"ROW" << std::setw(5) << L"COL"
                << std::setw(80) << L"FILENAME" << std::endl;
     int id{0};
     for(const Identifier &identifier : m_identifiers)
     {
         std::wcout << std::setw(5) << id++ << std::setw(10) << Identifier::typeToString(identifier.type) << std::setw(15) << Identifier::contextToString(identifier.context)
-                   << std::setw(10) << identifier.name
+                   << std::setw(10) << identifier.rbpOffset << std::setw(10) << identifier.name
                    << std::setw(20) << identifier.decoratedName << std::setw(30);
         if (identifier.context == Identifier::Context::Literal)
         {
@@ -372,7 +383,7 @@ std::vector<std::wstring> &Tokenizer::files()
     return m_files;
 }
 
-Identifier::Identifier() : linkTo(-1)
+Identifier::Identifier() : rbpOffset(0), linkTo(-1)
 {
     type = Type::Undefined;
     returnType = Type::Undefined;
@@ -488,11 +499,11 @@ int Identifier::size()
     case Type::Undefined:
         return 0;
     case Type::Integer:
-        return 8;
+        return 4;
     case Type::Bool:
         return 1;
     case Type::String:
-        return 0;
+        return 256;
     case Type::Double:
         return 8;
     case Type::Function:
