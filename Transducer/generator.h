@@ -48,6 +48,7 @@ public:
     static std::wstring pop(const Register &dest);
     static std::wstring mov(const Register &source, const Register &destination);
     static std::wstring mov(const std::wstring &source, const Register &destination);
+    static std::wstring mov(const int source, const Register &destination);
     static std::wstring ret();
     static std::wstring syscall();
 private:

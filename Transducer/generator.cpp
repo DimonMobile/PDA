@@ -38,8 +38,8 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_t
         ostream << Constants::globlStartLabel << std::endl;
         ostream << Constants::startLabel << std::endl;
         ostream << call(  hash(m_tokenizer.identifiers()[static_cast<size_t>(m_mainFunctionExists)].decoratedName) ) << std::endl;
-        ostream << mov(L"$60", Register(Register::ReturnType, Register::Size::Full)) << std::endl;
-        ostream << mov(L"$0", Register(0, Register::Size::Full)) << std::endl;
+        ostream << mov(60, Register(Register::ReturnType, Register::Size::Full)) << std::endl;
+        ostream << mov(0, Register(0, Register::Size::Full)) << std::endl;
         ostream << syscall() << std::endl;
     }
     writeFunctions(ostream);
@@ -145,6 +145,15 @@ std::wstring Generator::mov(const std::wstring &source, const Register &destinat
     std::wstring result = L"mov";
     result += registerSuffix(destination);
     result += L"\t" + source;
+    result += L",\t%" + destination.toString();
+    return result;
+}
+
+std::wstring Generator::mov(const int source, const Register &destination)
+{
+    std::wstring result = L"mov";
+    result += registerSuffix(destination);
+    result += L"\t$" + std::to_wstring(source);
     result += L",\t%" + destination.toString();
     return result;
 }
