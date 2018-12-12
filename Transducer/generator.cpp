@@ -22,7 +22,7 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_tokenizer(tokenizer), m_storeFst(storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_mainFunctionExists(-1), m_tokenizer(tokenizer), m_storeFst(storeFst)
 {
     UNUSED(tokenizer);
     UNUSED(storeFst);
@@ -41,6 +41,11 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_t
         ostream << mov(60, Register(Register::ReturnType, Register::Size::Full)) << std::endl;
         ostream << mov(0, Register(0, Register::Size::Full)) << std::endl;
         ostream << syscall() << std::endl;
+    }
+    else
+    {
+        ostream << comment(L"Main function not found, then all functions are extern") << std::endl;
+        writeGlobalFunctions(ostream);
     }
     writeFunctions(ostream);
 }
@@ -205,6 +210,17 @@ void Generator::writeFunctions(std::wostream &stream)
             stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackTop, Register::Size::Full)) << std::endl;
             stream << pop(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << ret() << std::endl;
+        }
+    }
+}
+
+void Generator::writeGlobalFunctions(std::wostream &stream)
+{
+    for(const Identifier &id : m_tokenizer.identifiers())
+    {
+        if (id.type == Identifier::Type::Function)
+        {
+            stream << L".globl " << hash(id.decoratedName) << std::endl;
         }
     }
 }
