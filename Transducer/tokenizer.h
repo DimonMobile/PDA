@@ -53,6 +53,7 @@ struct Identifier
     int rbpOffset;
     int linkTo;
     int tokenIndex;
+    std::vector<Type> functionArgTypes;
     Identifier();
     static std::wstring contextToString(const Context cnt);
     static Type typeFromWChar(const wchar_t ch);

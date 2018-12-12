@@ -198,6 +198,7 @@ void Tokenizer::commitToken()
                 {
                     Identifier &identifier = m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)];
                     identifier.decoratedName = identifier.decoratedName + Identifier::typeToWChar(m_identifiers[m_identifiers.size()-1].type) + L'@';
+                    identifier.functionArgTypes.push_back(m_identifiers[m_identifiers.size()-1].type);
                 }
             }
             else
