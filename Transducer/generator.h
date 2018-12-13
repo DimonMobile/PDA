@@ -54,6 +54,8 @@ public:
 private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
+    void writeFunctionBody(std::wostream &stream, const size_t startTokenIndex);
+    void writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation);
     void writeGlobalFunctions(std::wostream &stream);
     bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);

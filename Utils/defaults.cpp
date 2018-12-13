@@ -191,7 +191,7 @@ namespace Defaults
                         , Grammar::Rule(L'B', L"OB", L"").setErrorString(L"Function body error")
                         , Grammar::Rule(L'O', L"rE;", L"pE;", L"i=E;").setErrorString(L"Operation errror")
                         , Grammar::Rule(L'E', L"i+E", L"i-E", L"i*E", L"i/E", L"(E)", L"i", L"l", L"i(C)").setErrorString(L"Invalid expression")
-                        , Grammar::Rule(L'C', L"E,E", L"E", L"t").setErrorString(L"Invalid passing function arguments")
+                        , Grammar::Rule(L'C', L"E,E", L"E").setErrorString(L"Invalid passing function arguments")
                         // TODO: expression grammar and many other
 
                     );

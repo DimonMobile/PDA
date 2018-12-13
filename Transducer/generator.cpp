@@ -194,8 +194,10 @@ void Generator::writeLiterals(std::wostream &stream)
 
 void Generator::writeFunctions(std::wostream &stream)
 {
-    for(const Identifier &identifier : m_tokenizer.identifiers())
+    for(std::vector<Identifier>::const_iterator identifierIterator = m_tokenizer.identifiers().begin(); identifierIterator != m_tokenizer.identifiers().end(); ++identifierIterator)
     {
+        const Identifier &identifier = *identifierIterator;
+
         if (identifier.type == Identifier::Type::Function)
         {
             stream << hash(identifier.decoratedName) << L':' << std::endl;
@@ -207,11 +209,51 @@ void Generator::writeFunctions(std::wostream &stream)
                 stream << sub(identifier.rbpOffset, Register(Register::StackTop, Register::Size::Full)) << std::endl;
             }
             stream << comment(L"Function body") << std::endl;
+            writeFunctionBody(stream, static_cast<size_t>(identifier.tokenIndex));
+            // function end
             stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackTop, Register::Size::Full)) << std::endl;
             stream << pop(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << ret() << std::endl;
         }
     }
+}
+
+void Generator::writeFunctionBody(std::wostream &stream, const size_t startTokenIndex)
+{
+    bool started = false;
+    const std::vector<Token> &tokens = m_tokenizer.tokens();
+    std::vector<Token> currentOp;
+    for(size_t i = startTokenIndex; i != m_tokenizer.tokens().size(); ++i)
+    {
+        if (tokens[i].token == L'v')
+        {
+            started = true;
+            continue;
+        }
+        if (!started)
+            continue;
+        //checking for end
+        if (tokens[i].token == L'}')
+            break;
+        // splitting
+        if (tokens[i].token == L';')
+        {
+            if (!currentOp.empty())
+            {
+                writeAssembledOperation(stream, currentOp);
+                currentOp.clear();
+            }
+        }
+        else
+            currentOp.push_back(tokens[i]);
+    }
+    if (!currentOp.empty())
+        writeAssembledOperation(stream, currentOp);
+}
+
+void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
+{
+    if (operation[0] == L'i')
 }
 
 void Generator::writeGlobalFunctions(std::wostream &stream)
