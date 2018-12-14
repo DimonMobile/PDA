@@ -16,6 +16,8 @@ struct Token
     wchar_t token;
     int position, line;
     int fileIndex;
+    int identifierIdx = -1;
+    static std::wstring vectorToWString(const std::vector<Token> &src);
 };
 
 struct Identifier

@@ -216,6 +216,7 @@ void Tokenizer::commitToken()
         m_isPrevTokenTypeToken = false;
         Identifier id;
         id.tokenIndex = static_cast<int>(m_tokens.size() - 1);
+        currentToken.identifierIdx = static_cast<int>(m_identifiers.size());
         id.name = m_token;
         if (m_willFunction)
         {
@@ -285,6 +286,7 @@ void Tokenizer::commitToken()
         Identifier id;
         id.context = Identifier::Context::Literal;
         id.tokenIndex = static_cast<int>(m_tokens.size()) - 1;
+        currentToken.identifierIdx = static_cast<int>(m_identifiers.size());
         id.type = Identifier::typeFromWChar(Fst::userData_1);
         id.decoratedName = Identifier::typeToWChar(id.type);
         id.decoratedName += L'@' + std::to_wstring(m_tokens[id.tokenIndex].line) + L'@' + std::to_wstring(m_tokens[id.tokenIndex].position);
@@ -511,6 +513,14 @@ int Identifier::size()
         return 0;
     }
     return 0;
+}
+
+std::wstring Token::vectorToWString(const std::vector<Token> &src)
+{
+    std::wstring result;
+    for (const Token &token : src)
+        result += token.token;
+    return result;
 }
 
 } // namespace Transducer

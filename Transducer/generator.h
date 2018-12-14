@@ -55,6 +55,7 @@ private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
     void writeFunctionBody(std::wostream &stream, const size_t startTokenIndex);
+    void writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation);
     void writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation);
     void writeGlobalFunctions(std::wostream &stream);
     bool isMainFunctionExists();

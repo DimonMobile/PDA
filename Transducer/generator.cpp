@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Utils/misc.h"
+#include "Transducer/expressiontoken.h"
 
 #define UNUSED(x) (void)x
 
@@ -251,9 +252,25 @@ void Generator::writeFunctionBody(std::wostream &stream, const size_t startToken
         writeAssembledOperation(stream, currentOp);
 }
 
+void Generator::writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation)
+{
+    std::wstring sourceExpr = Token::vectorToWString(operation);
+    ExpressionTokenList expToken = ExpressionToken::fromStdWString(sourceExpr);
+    ExpressionTokenList converted = ExpressionToken::convertToRPN(expToken);
+
+    std::vector<Identifier> op;
+
+    stream << converted << std::endl;
+}
+
 void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
 {
-    if (operation[0] == L'i')
+    if (operation[0].token == L'i')
+    {
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 2, operation.end(), std::back_inserter(expression));
+        writeAsembledExpression(stream, expression);
+    }
 }
 
 void Generator::writeGlobalFunctions(std::wostream &stream)
