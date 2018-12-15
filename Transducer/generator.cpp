@@ -23,10 +23,10 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_mainFunctionExists(-1), m_tokenizer(tokenizer), m_storeFst(storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
+    m_mainFunctionExists(-1), m_tokenizer(tokenizer),
+    m_storeFst(storeFst)
 {
-    UNUSED(tokenizer);
-    UNUSED(storeFst);
 
     std::wofstream ostream("result.s");
     ostream << Constants::firstLineComment << std::endl;
@@ -70,34 +70,44 @@ wchar_t Generator::registerSuffix(const Register &source)
     return L'q';
 }
 
-std::wstring Generator::sub(const int source, const Register &dest)
+std::wstring Generator::add(const int source, const Register &dest, const wchar_t suff)
 {
-    std::wstring result = L"sub";
-    result += registerSuffix(dest);
+    std::wstring result = L"add";
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L'\t';
     result += L'$' + std::to_wstring(source);
-    result += L",\t%" + dest.toString();
+    result += L",\t" + dest.toString();
+    return result;
+}
+
+std::wstring Generator::sub(const int source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"sub";
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
+    result += L'\t';
+    result += L'$' + std::to_wstring(source);
+    result += L",\t" + dest.toString();
 
     return result;
 }
 
-std::wstring Generator::sub(const Register &source, const int dest)
+std::wstring Generator::sub(const Register &source, const int dest, const wchar_t suff)
 {
     std::wstring result = L"sub";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L"\t";
-    result += L'%' + source.toString();
+    result += source.toString();
     result += L",\t";
     result += L"$" + std::to_wstring(dest);
     return result;
 }
 
-std::wstring Generator::sub(const Register &source, const std::wstring &dest)
+std::wstring Generator::sub(const Register &source, const std::wstring &dest, const wchar_t suff)
 {
     std::wstring result = L"sub";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L"\t";
-    result += L'%' + source.toString();
+    result += source.toString();
     result += L",\t";
     result += dest;
     return result;
@@ -117,50 +127,50 @@ std::wstring Generator::comment(const std::wstring &source)
     return result;
 }
 
-std::wstring Generator::push(const Register &source)
+std::wstring Generator::push(const Register &source, const wchar_t suff)
 {
     std::wstring result = L"push";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L'\t';
-    result += L'%' + source.toString();
+    result += source.toString();
     return result;
 }
 
-std::wstring Generator::pop(const Register &dest)
+std::wstring Generator::pop(const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"pop";
-    result += registerSuffix(dest);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L'\t';
-    result += L'%' + dest.toString();
+    result += dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const Register &source, const Register &destination)
+std::wstring Generator::mov(const Register &source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(source);
-    result += L"\t%";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
     result += source.toString();
-    result += L",\t%";
-    result += destination.toString();
+    result += L",\t";
+    result += dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const std::wstring &source, const Register &destination)
+std::wstring Generator::mov(const std::wstring &source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(destination);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L"\t" + source;
-    result += L",\t%" + destination.toString();
+    result += L",\t" + dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const int source, const Register &destination)
+std::wstring Generator::mov(const int source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(destination);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L"\t$" + std::to_wstring(source);
-    result += L",\t%" + destination.toString();
+    result += L",\t" + dest.toString();
     return result;
 }
 
@@ -258,9 +268,50 @@ void Generator::writeAsembledExpression(std::wostream &stream, const std::vector
     ExpressionTokenList expToken = ExpressionToken::fromStdWString(sourceExpr);
     ExpressionTokenList converted = ExpressionToken::convertToRPN(expToken);
 
-    std::vector<Identifier> op;
+    std::stack<Identifier> idStack;
+    int offset = -1;
+    for(const ExpressionToken &token : converted)
+    {
+        offset = Token::getNextIdentifierIdx(operation, offset + 1);
+        if (token.isOperand())
+        {
+            const Identifier &currentIdentifier = m_tokenizer.identifiers()[static_cast<size_t>(operation[static_cast<size_t>(offset)].identifierIdx)];
+            idStack.push(currentIdentifier);
+            switch(currentIdentifier.type)
+            {
+            case Identifier::Type::Integer:
+            {
+                stream << sub(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                if (currentIdentifier.context == Identifier::Context::Literal)
+                {
+                    stream << mov(currentIdentifier.value.intValue, Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                }
+                else if (currentIdentifier.context == Identifier::Context::Link)
+                {
+                    stream << mov(Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[currentIdentifier.linkTo].rbpOffset), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                }
+                break;
+            }
+            }
+        }
+        else if (token.isOperation())
+        {
+            switch(idStack.top().type)
+            {
+            case Identifier::Type::Integer:
+            {
+                if (token.getCharToken() == L'+')
+                {
+                    //stream << mov(Register(Register::StackTop, Register::Size::Full, L'l'), Register:: )
+                }
+                break;
+            }
+            }
+        }
+    }
 
-    stream << converted << std::endl;
+    //stream << converted << std::endl;
 }
 
 void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
@@ -313,6 +364,7 @@ std::wstring Generator::hash(const std::wstring &source)
 std::wstring Register::toString() const
 {
     // rdi rsi rdx rcx r8 r9 || xmm0-7
+    std::wstring result;
     if (integer)
     {
         switch(argumentIndex)
@@ -322,13 +374,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rax";
-            case Size::Half:
-                return L"eax";
-            case Size::Quarter:
-                return L"ax";
-            case Size::OneEight:
-                return L"al";
+                result = L"rax";
+                break; case Size::Half:
+                result = L"eax";
+                break; case Size::Quarter:
+                result = L"ax";
+                break; case Size::OneEight:
+                result = L"al";
             }
             break;
         }
@@ -337,41 +389,41 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rbp";
-            case Size::Half:
-                return L"ebp";
-            case Size::Quarter:
-                return L"bp";
-            case Size::OneEight:
-                return L"bpl";
+                result = L"rbp";
+                break; case Size::Half:
+                result = L"ebp";
+                break; case Size::Quarter:
+                result = L"bp";
+                break; case Size::OneEight:
+                result = L"bpl";
             }
         }
-        case StackTop:
+            break; case StackTop:
         {
             switch(size)
             {
             case Size::Full:
-                return L"rsp";
-            case Size::Half:
-                return L"esp";
-            case Size::Quarter:
-                return L"sp";
-            case Size::OneEight:
-                return L"spl";
+                result = L"rsp";
+                break; case Size::Half:
+                result = L"esp";
+                break; case Size::Quarter:
+                result = L"sp";
+                break; case Size::OneEight:
+                result = L"spl";
             }
         }
-        case 0:
+            break; case 0:
         {
             switch(size)
             {
             case Size::Full:
-                return L"rdi";
-            case Size::Half:
-                return L"edi";
-            case Size::Quarter:
-                return L"di";
-            case Size::OneEight:
-                return L"dil";
+                result = L"rdi";
+                break; case Size::Half:
+                result = L"edi";
+                break; case Size::Quarter:
+                result = L"di";
+                break; case Size::OneEight:
+                result = L"dil";
             }
             break;
         }
@@ -380,13 +432,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rsi";
-            case Size::Half:
-                return L"esi";
-            case Size::Quarter:
-                return L"si";
-            case Size::OneEight:
-                return L"sil";
+                result = L"rsi";
+                break; case Size::Half:
+                result = L"esi";
+                break; case Size::Quarter:
+                result = L"si";
+                break; case Size::OneEight:
+                result = L"sil";
             }
             break;
         }
@@ -395,13 +447,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rdx";
-            case Size::Half:
-                return L"edx";
-            case Size::Quarter:
-                return L"dx";
-            case Size::OneEight:
-                return L"dl";
+                result = L"rdx";
+                break; case Size::Half:
+                result = L"edx";
+                break; case Size::Quarter:
+                result = L"dx";
+                break; case Size::OneEight:
+                result = L"dl";
             }
             break;
         }
@@ -410,13 +462,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rcx";
-            case Size::Half:
-                return L"ecx";
-            case Size::Quarter:
-                return L"cx";
-            case Size::OneEight:
-                return L"cl";
+                result = L"rcx";
+                break; case Size::Half:
+                result = L"ecx";
+                break; case Size::Quarter:
+                result = L"cx";
+                break; case Size::OneEight:
+                result = L"cl";
             }
             break;
         }
@@ -425,13 +477,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"r8";
-            case Size::Half:
-                return L"r8d";
-            case Size::Quarter:
-                return L"r8w";
-            case Size::OneEight:
-                return L"r8b";
+                result = L"r8";
+                break; case Size::Half:
+                result = L"r8d";
+                break; case Size::Quarter:
+                result = L"r8w";
+                break; case Size::OneEight:
+                result = L"r8b";
             }
             break;
         }
@@ -440,24 +492,40 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"r9";
-            case Size::Half:
-                return L"r9d";
-            case Size::Quarter:
-                return L"r9w";
-            case Size::OneEight:
-                return L"r9b";
+                result = L"r9";
+                break; case Size::Half:
+                result = L"r9d";
+                break; case Size::Quarter:
+                result = L"r9w";
+                break; case Size::OneEight:
+                result = L"r9b";
             }
             break;
         }
         }
     }
-    return std::wstring();
+
+    if (!result.empty())
+    {
+        result = L'%' + result;
+        if (isPtr)
+        {
+            result = L'(' + result + L')';
+            if (ptrOffset != 0)
+                result = std::to_wstring(ptrOffset) + result;
+        }
+    }
+
+    return result;
 }
 
 Register::Register(unsigned short index, Register::Size asize) : size(asize), argumentIndex(index)
 {
+}
 
+Register::Register(unsigned short index, Register::Size assize, int offset) : size(assize), argumentIndex(index), ptrOffset(offset)
+{
+    isPtr = true;
 }
 
 

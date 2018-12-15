@@ -30,7 +30,7 @@ public:
     static bool isBrace(const wchar_t wc);
     static std::list<ExpressionToken> fromStdWString(const std::wstring &source);
     static std::list<ExpressionToken> convertToRPN(const std::list<ExpressionToken> &expr);
-private:
+
     bool isComma() const;
     bool isOperand() const;
     bool isOperation() const;

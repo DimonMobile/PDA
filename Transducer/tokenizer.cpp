@@ -155,6 +155,7 @@ Tokenizer::Tokenizer(const std::wstring &source) : m_willFunction(false),   m_is
             {
                 m_identifiers[i].linkTo = foundIndex;
                 m_identifiers[i].context = Identifier::Context::Link;
+                m_identifiers[i].type = m_identifiers[static_cast<size_t>(foundIndex)].type;
             }
         }
     }
@@ -216,7 +217,7 @@ void Tokenizer::commitToken()
         m_isPrevTokenTypeToken = false;
         Identifier id;
         id.tokenIndex = static_cast<int>(m_tokens.size() - 1);
-        currentToken.identifierIdx = static_cast<int>(m_identifiers.size());
+        m_tokens[m_tokens.size()-1].identifierIdx = static_cast<int>(m_identifiers.size());
         id.name = m_token;
         if (m_willFunction)
         {
@@ -265,7 +266,7 @@ void Tokenizer::commitToken()
             {
                 identifier.context = Identifier::Context::Declaration;
                 summaryOffset += identifier.size();
-                identifier.rbpOffset = summaryOffset;
+                identifier.rbpOffset = -summaryOffset;
             }
             else
             {
@@ -286,7 +287,7 @@ void Tokenizer::commitToken()
         Identifier id;
         id.context = Identifier::Context::Literal;
         id.tokenIndex = static_cast<int>(m_tokens.size()) - 1;
-        currentToken.identifierIdx = static_cast<int>(m_identifiers.size());
+        m_tokens[m_tokens.size()-1].identifierIdx = static_cast<int>(m_identifiers.size());
         id.type = Identifier::typeFromWChar(Fst::userData_1);
         id.decoratedName = Identifier::typeToWChar(id.type);
         id.decoratedName += L'@' + std::to_wstring(m_tokens[id.tokenIndex].line) + L'@' + std::to_wstring(m_tokens[id.tokenIndex].position);
@@ -521,6 +522,16 @@ std::wstring Token::vectorToWString(const std::vector<Token> &src)
     for (const Token &token : src)
         result += token.token;
     return result;
+}
+
+int Token::getNextIdentifierIdx(const std::vector<Token> &src, const int offset)
+{
+    for(std::vector<Token>::const_iterator it = src.cbegin() + offset; it != src.end(); ++it)
+    {
+        if (it->identifierIdx != -1)
+            return static_cast<int>(std::distance(src.begin(), it));
+    }
+    return -1;
 }
 
 } // namespace Transducer

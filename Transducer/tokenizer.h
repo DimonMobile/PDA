@@ -18,6 +18,7 @@ struct Token
     int fileIndex;
     int identifierIdx = -1;
     static std::wstring vectorToWString(const std::vector<Token> &src);
+    static int getNextIdentifierIdx(const std::vector<Token> &src, const int offset = 0);
 };
 
 struct Identifier
