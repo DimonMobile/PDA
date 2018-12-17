@@ -395,6 +395,14 @@ Identifier::Identifier() : rbpOffset(0), linkTo(-1)
 
 }
 
+Identifier Identifier::createIntegerLiteral(const int value)
+{
+    Identifier id;
+    id.type = Identifier::Type::Integer;
+    id.value.intValue = value;
+    return id;
+}
+
 std::wstring Identifier::contextToString(const Identifier::Context cnt)
 {
     switch(cnt)

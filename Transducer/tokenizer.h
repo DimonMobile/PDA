@@ -58,6 +58,8 @@ struct Identifier
     int tokenIndex;
     std::vector<Type> functionArgTypes;
     Identifier();
+
+    static Identifier createIntegerLiteral(const int value);
     static std::wstring contextToString(const Context cnt);
     static Type typeFromWChar(const wchar_t ch);
     static wchar_t typeToWChar(const Type tp);

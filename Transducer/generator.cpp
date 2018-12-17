@@ -2,6 +2,7 @@
 
 #include <string>
 #include <fstream>
+#include <cassert>
 
 #include "Utils/misc.h"
 #include "Transducer/expressiontoken.h"
@@ -70,6 +71,39 @@ wchar_t Generator::registerSuffix(const Register &source)
     return L'q';
 }
 
+std::wstring Generator::div(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"idiv";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::mul(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"imul";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::add(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"add";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
 std::wstring Generator::add(const int source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"add";
@@ -77,6 +111,18 @@ std::wstring Generator::add(const int source, const Register &dest, const wchar_
     result += L'\t';
     result += L'$' + std::to_wstring(source);
     result += L",\t" + dest.toString();
+    return result;
+}
+
+
+std::wstring Generator::sub(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"sub";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
     return result;
 }
 
@@ -262,19 +308,22 @@ void Generator::writeFunctionBody(std::wostream &stream, const size_t startToken
         writeAssembledOperation(stream, currentOp);
 }
 
-void Generator::writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation)
+Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation)
 {
+    Identifier::Type result = Identifier::Type::Undefined;
     std::wstring sourceExpr = Token::vectorToWString(operation);
     ExpressionTokenList expToken = ExpressionToken::fromStdWString(sourceExpr);
     ExpressionTokenList converted = ExpressionToken::convertToRPN(expToken);
 
     std::stack<Identifier> idStack;
     int offset = -1;
+
     for(const ExpressionToken &token : converted)
     {
-        offset = Token::getNextIdentifierIdx(operation, offset + 1);
         if (token.isOperand())
         {
+            offset = Token::getNextIdentifierIdx(operation, offset + 1);
+
             const Identifier &currentIdentifier = m_tokenizer.identifiers()[static_cast<size_t>(operation[static_cast<size_t>(offset)].identifierIdx)];
             idStack.push(currentIdentifier);
             switch(currentIdentifier.type)
@@ -291,6 +340,7 @@ void Generator::writeAsembledExpression(std::wostream &stream, const std::vector
                     stream << mov(Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[currentIdentifier.linkTo].rbpOffset), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
                     stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
                 }
+                result = Identifier::Type::Integer;
                 break;
             }
             }
@@ -303,15 +353,74 @@ void Generator::writeAsembledExpression(std::wostream &stream, const std::vector
             {
                 if (token.getCharToken() == L'+')
                 {
-                    //stream << mov(Register(Register::StackTop, Register::Size::Full, L'l'), Register:: )
+                    stream << comment(L"sum") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << add(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'-')
+                {
+                    stream << comment(L"sub") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << sub(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'*')
+                {
+                    stream << comment(L"imul") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << mul(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'/')
+                {
+                    stream << comment(L"idiv") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << div(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
                 }
                 break;
             }
             }
         }
     }
-
-    //stream << converted << std::endl;
+    return result;
 }
 
 void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
@@ -320,7 +429,15 @@ void Generator::writeAssembledOperation(std::wostream &stream, const std::vector
     {
         std::vector<Token> expression;
         std::copy(operation.begin() + 2, operation.end(), std::back_inserter(expression));
-        writeAsembledExpression(stream, expression);
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        assert(expressionResultType != Identifier::Type::Undefined); // TODO: throw exception
+        if (expressionResultType == Identifier::Type::Integer)
+        {
+            stream << comment(L"retrieve value and restore stack") << std::endl;
+            stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+            stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[m_tokenizer.identifiers()[operation[0].identifierIdx].linkTo].rbpOffset ), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+        }
     }
 }
 
@@ -397,8 +514,9 @@ std::wstring Register::toString() const
                 break; case Size::OneEight:
                 result = L"bpl";
             }
+            break;
         }
-            break; case StackTop:
+        case StackTop:
         {
             switch(size)
             {
@@ -411,8 +529,9 @@ std::wstring Register::toString() const
                 break; case Size::OneEight:
                 result = L"spl";
             }
+            break;
         }
-            break; case 0:
+        case 0:
         {
             switch(size)
             {
