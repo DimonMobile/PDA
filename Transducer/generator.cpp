@@ -22,6 +22,8 @@ namespace Constants
     const std::wstring sectionDataString = L".section .data";
     const std::wstring sectionUninitializedDataString = L".section .bss";
     const std::wstring sectionTextString = L".section .text";
+    const std::wstring integerOutputStringLabel = L"IntegerOutput";
+    const std::wstring integerOutputString = L".asciz \"%d\\n\"";
 }
 
 Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
@@ -32,6 +34,8 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
     std::wofstream ostream("result.s");
     ostream << Constants::firstLineComment << std::endl;
     ostream << Constants::sectionDataString << std::endl;
+    ostream << Constants::integerOutputStringLabel << L':' << std::endl;
+    ostream << Constants::integerOutputString << std::endl;
     writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
@@ -71,13 +75,11 @@ wchar_t Generator::registerSuffix(const Register &source)
     return L'q';
 }
 
-std::wstring Generator::div(const Register &source, const Register &dest, const wchar_t suff)
+std::wstring Generator::div(const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"idiv";
-    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L"\t";
-    result += source.toString();
-    result += L",\t";
     result += dest.toString();
     return result;
 }
@@ -263,7 +265,7 @@ void Generator::writeFunctions(std::wostream &stream)
             if (identifier.rbpOffset > 0)
             {
                 stream << comment(L"Space allocate for variables") << std::endl;
-                stream << sub(identifier.rbpOffset, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                stream << sub( identifier.roundedRbpOffset() , Register(Register::StackTop, Register::Size::Full)) << std::endl;
             }
             stream << comment(L"Function body") << std::endl;
             writeFunctionBody(stream, static_cast<size_t>(identifier.tokenIndex));
@@ -402,7 +404,7 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                 else if (token.getCharToken() == L'/')
                 {
                     stream << comment(L"idiv") << std::endl;
-                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
                     // stack poping
                     stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
                     idStack.pop();
@@ -411,8 +413,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                         // TODO: throw exception: invalid cast
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
-                    stream << div(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
-                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    stream << div(Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
                     result = Identifier::Type::Integer;
                 }
                 break;
@@ -437,6 +439,34 @@ void Generator::writeAssembledOperation(std::wostream &stream, const std::vector
             stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
             stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[m_tokenizer.identifiers()[operation[0].identifierIdx].linkTo].rbpOffset ), L'l') << std::endl;
             stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+        }
+    }
+    else if (operation[0].token == L'p')
+    {
+        const Identifier &identifier = m_tokenizer.identifiers()[operation[1].identifierIdx];
+        if (identifier.context == Identifier::Context::Literal)
+        {
+            switch(identifier.type)
+            {
+            case Identifier::Type::Integer:
+                stream << comment(L"Printing") << std::endl;
+                stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
+                stream << mov( identifier.value.intValue, Register(1, Register::Size::Half)) << std::endl;
+                stream << call(L"printf") << std::endl;
+                break;
+            }
+        }
+        else if (identifier.context == Identifier::Context::Link)
+        {
+            switch (identifier.type)
+            {
+            case Identifier::Type::Integer:
+                stream << comment(L"Printing") << std::endl;
+                stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
+                stream << mov( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[identifier.linkTo].rbpOffset ) , Register(1, Register::Size::Half), L'l') << std::endl;
+                stream << call(L"printf") << std::endl;
+                break;
+            }
         }
     }
 }

@@ -67,6 +67,7 @@ struct Identifier
     static std::wstring typeToAsm(const Type tp);
     static Type typeFromString(const std::wstring &tp);
     int size();
+    int roundedRbpOffset() const;
 
 };
 

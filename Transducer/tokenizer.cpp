@@ -524,6 +524,13 @@ int Identifier::size()
     return 0;
 }
 
+int Identifier::roundedRbpOffset() const
+{
+    int full = rbpOffset / 8;
+    int remainder = rbpOffset % 8;
+    return (remainder > 0) ? full * 8 + 8 : rbpOffset;
+}
+
 std::wstring Token::vectorToWString(const std::vector<Token> &src)
 {
     std::wstring result;
