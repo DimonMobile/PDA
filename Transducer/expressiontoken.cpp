@@ -21,7 +21,7 @@ int ExpressionToken::getPriority() const
         return 1;
     else if (m_charToken == L'-' || m_charToken == L'+')
         return 2;
-    else if (m_charToken == L'*' || m_charToken == L'/')
+    else if (m_charToken == L'*' || m_charToken == L'/' || m_charToken == L'%')
         return 3;
     else if (m_charToken == L')' || m_charToken == L'(')
     {
@@ -40,7 +40,7 @@ bool ExpressionToken::isOperand() const
 
 bool ExpressionToken::isOperation() const
 {
-    if (m_charToken == L'-' || m_charToken == L'+' || m_charToken == L'/' || m_charToken == L'*')
+    if (m_charToken == L'-' || m_charToken == L'+' || m_charToken == L'/' || m_charToken == L'*' || m_charToken == L'%')
         return true;
     else
         return false;

@@ -36,7 +36,7 @@ Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
     ostream << Constants::sectionDataString << std::endl;
     ostream << Constants::integerOutputStringLabel << L':' << std::endl;
     ostream << Constants::integerOutputString << std::endl;
-    writeLiterals(ostream);
+    //writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
     if (isMainFunctionExists())
@@ -73,6 +73,11 @@ wchar_t Generator::registerSuffix(const Register &source)
         }
     }
     return L'q';
+}
+
+std::wstring Generator::cltd()
+{
+    return L"cltd";
 }
 
 std::wstring Generator::div(const Register &dest, const wchar_t suff)
@@ -404,7 +409,7 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                 else if (token.getCharToken() == L'/')
                 {
                     stream << comment(L"idiv") << std::endl;
-                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
                     // stack poping
                     stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
                     idStack.pop();
@@ -412,9 +417,27 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     {
                         // TODO: throw exception: invalid cast
                     }
-                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << cltd() << std::endl;
                     stream << div(Register(Register::Dest, Register::Size::Half)) << std::endl;
                     stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'%')
+                {
+                    stream << comment(L"idiv(remainder)") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << cltd() << std::endl;
+                    stream << div(Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(2, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
                     result = Identifier::Type::Integer;
                 }
                 break;
@@ -443,31 +466,22 @@ void Generator::writeAssembledOperation(std::wostream &stream, const std::vector
     }
     else if (operation[0].token == L'p')
     {
-        const Identifier &identifier = m_tokenizer.identifiers()[operation[1].identifierIdx];
-        if (identifier.context == Identifier::Context::Literal)
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 1, operation.end(), std::back_inserter(expression));
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        stream << comment(L"Printing") << std::endl;
+
+        switch(expressionResultType)
         {
-            switch(identifier.type)
-            {
-            case Identifier::Type::Integer:
-                stream << comment(L"Printing") << std::endl;
-                stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
-                stream << mov( identifier.value.intValue, Register(1, Register::Size::Half)) << std::endl;
-                stream << call(L"printf") << std::endl;
-                break;
-            }
+        case Identifier::Type::Integer:
+            stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
+            stream << mov( Register(Register::StackTop, Register::Size::Full, 0), Register(1, Register::Size::Half), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+            break;
+        default:
+            throw Exception::Exception(); // TODO: revise exception
         }
-        else if (identifier.context == Identifier::Context::Link)
-        {
-            switch (identifier.type)
-            {
-            case Identifier::Type::Integer:
-                stream << comment(L"Printing") << std::endl;
-                stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
-                stream << mov( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[identifier.linkTo].rbpOffset ) , Register(1, Register::Size::Half), L'l') << std::endl;
-                stream << call(L"printf") << std::endl;
-                break;
-            }
-        }
+        stream << call(L"printf") << std::endl;
     }
 }
 

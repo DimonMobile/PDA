@@ -44,6 +44,7 @@ public:
 
     static wchar_t registerSuffix(const Register &source);
     //  ASM functions
+    static std::wstring cltd();
     static std::wstring div(const Register &dest, const wchar_t suff = L'\0');
     static std::wstring mul(const Register &source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring add(const Register &source, const Register &dest, const wchar_t suff = L'\0');
