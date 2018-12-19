@@ -264,6 +264,7 @@ void Generator::writeFunctions(std::wostream &stream)
 
         if (identifier.type == Identifier::Type::Function)
         {
+            stream << comment(L"Function begin") << std::endl;
             stream << hash(identifier.decoratedName) << L':' << std::endl;
             stream << push(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << mov(Register(Register::StackTop, Register::Size::Full), Register(Register::StackBase, Register::Size::Full)) << std::endl;
@@ -271,6 +272,15 @@ void Generator::writeFunctions(std::wostream &stream)
             {
                 stream << comment(L"Space allocate for variables") << std::endl;
                 stream << sub( identifier.roundedRbpOffset() , Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                stream << comment(L"Arguments copy from registers to variables") << std::endl;
+                // copying arguments
+                for(size_t i = 0 ; i < identifier.functionArgs.size(); ++i)
+                {
+                    if (identifier.functionArgs[i].type == Identifier::Type::Integer)
+                    {
+                        stream << mov(Register(i, Register::Size::Half), Register(Register::StackBase, Register::Size::Full, identifier.functionArgs[i].rbpOffset), L'l') << std::endl;
+                    }
+                }
             }
             stream << comment(L"Function body") << std::endl;
             writeFunctionBody(stream, static_cast<size_t>(identifier.tokenIndex));
@@ -325,8 +335,9 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
     std::stack<Identifier> idStack;
     int offset = -1;
 
-    for(const ExpressionToken &token : converted)
+    for(std::list<ExpressionToken>::const_iterator tokenIterator = converted.cbegin(); tokenIterator != converted.cend(); ++tokenIterator)
     {
+        const ExpressionToken &token = *tokenIterator;
         if (token.isOperand())
         {
             offset = Token::getNextIdentifierIdx(operation, offset + 1);
@@ -351,6 +362,13 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                 break;
             }
             }
+        }
+        else if (token.getCharToken() == L'@')
+        {
+            int argCount = (++tokenIterator)->getCharToken() - L'0';
+            std::vector<Identifier> arguments;
+            // TODO: function passing arguments
+
         }
         else if (token.isOperation())
         {
@@ -482,6 +500,21 @@ void Generator::writeAssembledOperation(std::wostream &stream, const std::vector
             throw Exception::Exception(); // TODO: revise exception
         }
         stream << call(L"printf") << std::endl;
+    }
+    else if (operation[0].token == L'r')
+    {
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 1, operation.end(), std::back_inserter(expression));
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        stream << comment(L"Returning") << std::endl;
+        switch (expressionResultType) {
+        case Identifier::Type::Integer:
+            stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+            break;
+        default:
+            throw Exception::Exception(); // TODO: revice exception
+        }
     }
 }
 

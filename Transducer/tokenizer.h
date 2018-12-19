@@ -56,7 +56,7 @@ struct Identifier
     int rbpOffset;
     int linkTo;
     int tokenIndex;
-    std::vector<Type> functionArgTypes;
+    std::vector<Identifier> functionArgs;
     Identifier();
 
     static Identifier createIntegerLiteral(const int value);

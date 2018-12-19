@@ -199,7 +199,6 @@ void Tokenizer::commitToken()
                 {
                     Identifier &identifier = m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)];
                     identifier.decoratedName = identifier.decoratedName + Identifier::typeToWChar(m_identifiers[m_identifiers.size()-1].type) + L'@';
-                    identifier.functionArgTypes.push_back(m_identifiers[m_identifiers.size()-1].type);
                 }
             }
             else
@@ -259,14 +258,17 @@ void Tokenizer::commitToken()
     else if (currentToken.token == L'v')
     {
         int summaryOffset = 0;
+        std::vector<Identifier> functionArgs;
         for(int i = static_cast<int>(m_identifiers.size()) - 1; i >= 0; --i )
         {
             Identifier &identifier = m_identifiers[static_cast<size_t>(i)];
-            if (identifier.context != Identifier::Context::Argument && identifier.type != Identifier::Type::Function)
+            if ( !(identifier.context == Identifier::Context::Declaration && identifier.type == Identifier::Type::Function) )
             {
-                identifier.context = Identifier::Context::Declaration;
                 summaryOffset += identifier.size();
                 identifier.rbpOffset = -summaryOffset;
+                if (identifier.context == Identifier::Context::Argument)
+                    functionArgs.push_back(identifier);
+                identifier.context = Identifier::Context::Declaration;
             }
             else
             {
@@ -276,6 +278,7 @@ void Tokenizer::commitToken()
         if (m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(identifiers().size()))
         {
             m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].rbpOffset = summaryOffset;
+            m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].functionArgs = functionArgs;
         }
     }
     else if (currentToken.token == L'f')
