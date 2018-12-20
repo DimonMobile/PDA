@@ -2,8 +2,10 @@
 
 #include <string>
 #include <fstream>
+#include <cassert>
 
 #include "Utils/misc.h"
+#include "Transducer/expressiontoken.h"
 
 #define UNUSED(x) (void)x
 
@@ -20,17 +22,21 @@ namespace Constants
     const std::wstring sectionDataString = L".section .data";
     const std::wstring sectionUninitializedDataString = L".section .bss";
     const std::wstring sectionTextString = L".section .text";
+    const std::wstring integerOutputStringLabel = L"IntegerOutput";
+    const std::wstring integerOutputString = L".asciz \"%d\\n\"";
 }
 
-Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) : m_mainFunctionExists(-1), m_tokenizer(tokenizer), m_storeFst(storeFst)
+Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
+    m_mainFunctionExists(-1), m_tokenizer(tokenizer),
+    m_storeFst(storeFst)
 {
-    UNUSED(tokenizer);
-    UNUSED(storeFst);
 
     std::wofstream ostream("result.s");
     ostream << Constants::firstLineComment << std::endl;
     ostream << Constants::sectionDataString << std::endl;
-    writeLiterals(ostream);
+    ostream << Constants::integerOutputStringLabel << L':' << std::endl;
+    ostream << Constants::integerOutputString << std::endl;
+    //writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
     if (isMainFunctionExists())
@@ -69,34 +75,92 @@ wchar_t Generator::registerSuffix(const Register &source)
     return L'q';
 }
 
-std::wstring Generator::sub(const int source, const Register &dest)
+std::wstring Generator::cltd()
 {
-    std::wstring result = L"sub";
-    result += registerSuffix(dest);
+    return L"cltd";
+}
+
+std::wstring Generator::div(const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"idiv";
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
+    result += L"\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::mul(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"imul";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::add(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"add";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::add(const int source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"add";
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L'\t';
     result += L'$' + std::to_wstring(source);
-    result += L",\t%" + dest.toString();
+    result += L",\t" + dest.toString();
+    return result;
+}
+
+
+std::wstring Generator::sub(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"sub";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::sub(const int source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"sub";
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
+    result += L'\t';
+    result += L'$' + std::to_wstring(source);
+    result += L",\t" + dest.toString();
 
     return result;
 }
 
-std::wstring Generator::sub(const Register &source, const int dest)
+std::wstring Generator::sub(const Register &source, const int dest, const wchar_t suff)
 {
     std::wstring result = L"sub";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L"\t";
-    result += L'%' + source.toString();
+    result += source.toString();
     result += L",\t";
     result += L"$" + std::to_wstring(dest);
     return result;
 }
 
-std::wstring Generator::sub(const Register &source, const std::wstring &dest)
+std::wstring Generator::sub(const Register &source, const std::wstring &dest, const wchar_t suff)
 {
     std::wstring result = L"sub";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L"\t";
-    result += L'%' + source.toString();
+    result += source.toString();
     result += L",\t";
     result += dest;
     return result;
@@ -116,50 +180,50 @@ std::wstring Generator::comment(const std::wstring &source)
     return result;
 }
 
-std::wstring Generator::push(const Register &source)
+std::wstring Generator::push(const Register &source, const wchar_t suff)
 {
     std::wstring result = L"push";
-    result += registerSuffix(source);
+    result += suff == L'\0' ? registerSuffix(source) : suff;
     result += L'\t';
-    result += L'%' + source.toString();
+    result += source.toString();
     return result;
 }
 
-std::wstring Generator::pop(const Register &dest)
+std::wstring Generator::pop(const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"pop";
-    result += registerSuffix(dest);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L'\t';
-    result += L'%' + dest.toString();
+    result += dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const Register &source, const Register &destination)
+std::wstring Generator::mov(const Register &source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(source);
-    result += L"\t%";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
     result += source.toString();
-    result += L",\t%";
-    result += destination.toString();
+    result += L",\t";
+    result += dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const std::wstring &source, const Register &destination)
+std::wstring Generator::mov(const std::wstring &source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(destination);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L"\t" + source;
-    result += L",\t%" + destination.toString();
+    result += L",\t" + dest.toString();
     return result;
 }
 
-std::wstring Generator::mov(const int source, const Register &destination)
+std::wstring Generator::mov(const int source, const Register &dest, const wchar_t suff)
 {
     std::wstring result = L"mov";
-    result += registerSuffix(destination);
+    result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L"\t$" + std::to_wstring(source);
-    result += L",\t%" + destination.toString();
+    result += L",\t" + dest.toString();
     return result;
 }
 
@@ -194,22 +258,296 @@ void Generator::writeLiterals(std::wostream &stream)
 
 void Generator::writeFunctions(std::wostream &stream)
 {
-    for(const Identifier &identifier : m_tokenizer.identifiers())
+    for(std::vector<Identifier>::const_iterator identifierIterator = m_tokenizer.identifiers().begin(); identifierIterator != m_tokenizer.identifiers().end(); ++identifierIterator)
     {
+        const Identifier &identifier = *identifierIterator;
+
         if (identifier.type == Identifier::Type::Function)
         {
+            stream << comment(L"Function begin") << std::endl;
             stream << hash(identifier.decoratedName) << L':' << std::endl;
             stream << push(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << mov(Register(Register::StackTop, Register::Size::Full), Register(Register::StackBase, Register::Size::Full)) << std::endl;
             if (identifier.rbpOffset > 0)
             {
                 stream << comment(L"Space allocate for variables") << std::endl;
-                stream << sub(identifier.rbpOffset, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                stream << sub( identifier.roundedRbpOffset() , Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                stream << comment(L"Arguments copy from registers to variables") << std::endl;
+                // copying arguments
+                for(size_t i = 0 ; i < identifier.functionArgs.size(); ++i)
+                {
+                    if (identifier.functionArgs[i].type == Identifier::Type::Integer)
+                    {
+                        stream << mov(Register(i, Register::Size::Half), Register(Register::StackBase, Register::Size::Full, identifier.functionArgs[i].rbpOffset), L'l') << std::endl;
+                    }
+                }
             }
             stream << comment(L"Function body") << std::endl;
+            writeFunctionBody(stream, static_cast<size_t>(identifier.tokenIndex));
+            // function end
             stream << mov(Register(Register::StackBase, Register::Size::Full), Register(Register::StackTop, Register::Size::Full)) << std::endl;
             stream << pop(Register(Register::StackBase, Register::Size::Full)) << std::endl;
             stream << ret() << std::endl;
+        }
+    }
+}
+
+void Generator::writeFunctionBody(std::wostream &stream, const size_t startTokenIndex)
+{
+    bool started = false;
+    const std::vector<Token> &tokens = m_tokenizer.tokens();
+    std::vector<Token> currentOp;
+    for(size_t i = startTokenIndex; i != m_tokenizer.tokens().size(); ++i)
+    {
+        if (tokens[i].token == L'v')
+        {
+            started = true;
+            continue;
+        }
+        if (!started)
+            continue;
+        //checking for end
+        if (tokens[i].token == L'}')
+            break;
+        // splitting
+        if (tokens[i].token == L';')
+        {
+            if (!currentOp.empty())
+            {
+                writeAssembledOperation(stream, currentOp);
+                currentOp.clear();
+            }
+        }
+        else
+            currentOp.push_back(tokens[i]);
+    }
+    if (!currentOp.empty())
+        writeAssembledOperation(stream, currentOp);
+}
+
+Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation)
+{
+    Identifier::Type result = Identifier::Type::Undefined;
+    std::wstring sourceExpr = Token::vectorToWString(operation);
+    ExpressionTokenList expToken = ExpressionToken::fromStdWString(sourceExpr);
+    ExpressionTokenList converted = ExpressionToken::convertToRPN(expToken);
+
+    std::stack<Identifier> idStack;
+    int offset = -1;
+    for(std::list<ExpressionToken>::const_iterator tokenIterator = converted.cbegin(); tokenIterator != converted.cend(); ++tokenIterator)
+    {
+        const ExpressionToken &token = *tokenIterator;
+        if (token.isOperand())
+        {
+            offset = Token::getNextIdentifierIdx(operation, offset + 1);
+
+            const Identifier &currentIdentifier = m_tokenizer.identifiers()[static_cast<size_t>(operation[static_cast<size_t>(offset)].identifierIdx)];
+            idStack.push(currentIdentifier);
+            switch(currentIdentifier.type)
+            {
+            case Identifier::Type::Integer:
+            {
+                stream << sub(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                if (currentIdentifier.context == Identifier::Context::Literal)
+                {
+                    stream << mov(currentIdentifier.value.intValue, Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                }
+                else if (currentIdentifier.context == Identifier::Context::Link)
+                {
+                    stream << mov(Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[currentIdentifier.linkTo].rbpOffset), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                }
+                result = Identifier::Type::Integer;
+                break;
+            }
+            case Identifier::Type::Undefined: // only if function
+            {
+                if (currentIdentifier.context == Identifier::Context::Default) // I'm sure that it is a function!
+                {
+                    stream << sub(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                }
+                break;
+            }
+            }
+        }
+        else if (token.getCharToken() == L'@')
+        {
+            int argCount = (++tokenIterator)->getCharToken() - L'0';
+            std::vector<Identifier> arguments;
+            stream << comment(L"Passing arguments") << std::endl;
+            std::wstring decorator;
+            for(int i = argCount - 1; i >= 0; --i)
+            {
+                if (idStack.top().type == Identifier::Type::Integer)
+                {
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(i, Register::Size::Half), L'l') << std::endl;
+                    // Popping from stack
+                    idStack.pop();
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full) ) << std::endl;
+                    // Adding f-tion decoration by type
+                    decorator += L"@i";
+                }
+            }
+            // Adding f-tion decoration
+            decorator += L'@';
+            // Calling function
+            stream << call(hash(idStack.top().name + decorator)) << std::endl;
+
+            int functionIndex = m_tokenizer.findDeclaration(idStack.top().name + decorator);
+            assert(functionIndex != -1);
+            idStack.top().returnType = m_tokenizer.identifiers()[functionIndex].returnType;
+            idStack.top().type = idStack.top().returnType;
+
+            // Returning value to the stack
+            if (idStack.top().returnType == Identifier::Type::Integer)
+                stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+
+            result = idStack.top().returnType;
+        }
+        else if (token.isOperation())
+        {
+            switch(idStack.top().type)
+            {
+            case Identifier::Type::Integer:
+            {
+                if (token.getCharToken() == L'+')
+                {
+                    stream << comment(L"sum") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << add(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'-')
+                {
+                    stream << comment(L"sub") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << sub(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'*')
+                {
+                    stream << comment(L"imul") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Source, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    stream << mul(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'/')
+                {
+                    stream << comment(L"idiv") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << cltd() << std::endl;
+                    stream << div(Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                else if (token.getCharToken() == L'%')
+                {
+                    stream << comment(L"idiv(remainder)") << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+                    // stack poping
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                    idStack.pop();
+                    if (idStack.top().type != Identifier::Type::Integer)
+                    {
+                        // TODO: throw exception: invalid cast
+                    }
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+                    stream << cltd() << std::endl;
+                    stream << div(Register(Register::Dest, Register::Size::Half)) << std::endl;
+                    stream << mov(Register(2, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+                    result = Identifier::Type::Integer;
+                }
+                break;
+            }
+            }
+        }
+    }
+    return result;
+}
+
+void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
+{
+    if (operation[0].token == L'i')
+    {
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 2, operation.end(), std::back_inserter(expression));
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        assert(expressionResultType != Identifier::Type::Undefined); // TODO: throw exception
+        if (expressionResultType == Identifier::Type::Integer)
+        {
+            stream << comment(L"retrieve value and restore stack") << std::endl;
+            stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
+            stream << mov(Register(Register::Dest, Register::Size::Half), Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[m_tokenizer.identifiers()[operation[0].identifierIdx].linkTo].rbpOffset ), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+        }
+    }
+    else if (operation[0].token == L'p')
+    {
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 1, operation.end(), std::back_inserter(expression));
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        stream << comment(L"Printing") << std::endl;
+
+        switch(expressionResultType)
+        {
+        case Identifier::Type::Integer:
+            stream << mov( L'$' + Constants::integerOutputStringLabel, Register(0, Register::Size::Full) ) << std::endl;
+            stream << mov( Register(Register::StackTop, Register::Size::Full, 0), Register(1, Register::Size::Half), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+            break;
+        default:
+            throw Exception::Exception(); // TODO: revise exception
+        }
+        stream << call(L"printf") << std::endl;
+    }
+    else if (operation[0].token == L'r')
+    {
+        std::vector<Token> expression;
+        std::copy(operation.begin() + 1, operation.end(), std::back_inserter(expression));
+        Identifier::Type expressionResultType = writeAsembledExpression(stream, expression);
+        stream << comment(L"Returning") << std::endl;
+        switch (expressionResultType) {
+        case Identifier::Type::Integer:
+            stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
+            stream << add(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+            break;
+        default:
+            throw Exception::Exception(); // TODO: revice exception
         }
     }
 }
@@ -254,6 +592,7 @@ std::wstring Generator::hash(const std::wstring &source)
 std::wstring Register::toString() const
 {
     // rdi rsi rdx rcx r8 r9 || xmm0-7
+    std::wstring result;
     if (integer)
     {
         switch(argumentIndex)
@@ -263,13 +602,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rax";
-            case Size::Half:
-                return L"eax";
-            case Size::Quarter:
-                return L"ax";
-            case Size::OneEight:
-                return L"al";
+                result = L"rax";
+                break; case Size::Half:
+                result = L"eax";
+                break; case Size::Quarter:
+                result = L"ax";
+                break; case Size::OneEight:
+                result = L"al";
             }
             break;
         }
@@ -278,41 +617,43 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rbp";
-            case Size::Half:
-                return L"ebp";
-            case Size::Quarter:
-                return L"bp";
-            case Size::OneEight:
-                return L"bpl";
+                result = L"rbp";
+                break; case Size::Half:
+                result = L"ebp";
+                break; case Size::Quarter:
+                result = L"bp";
+                break; case Size::OneEight:
+                result = L"bpl";
             }
+            break;
         }
         case StackTop:
         {
             switch(size)
             {
             case Size::Full:
-                return L"rsp";
-            case Size::Half:
-                return L"esp";
-            case Size::Quarter:
-                return L"sp";
-            case Size::OneEight:
-                return L"spl";
+                result = L"rsp";
+                break; case Size::Half:
+                result = L"esp";
+                break; case Size::Quarter:
+                result = L"sp";
+                break; case Size::OneEight:
+                result = L"spl";
             }
+            break;
         }
         case 0:
         {
             switch(size)
             {
             case Size::Full:
-                return L"rdi";
-            case Size::Half:
-                return L"edi";
-            case Size::Quarter:
-                return L"di";
-            case Size::OneEight:
-                return L"dil";
+                result = L"rdi";
+                break; case Size::Half:
+                result = L"edi";
+                break; case Size::Quarter:
+                result = L"di";
+                break; case Size::OneEight:
+                result = L"dil";
             }
             break;
         }
@@ -321,13 +662,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rsi";
-            case Size::Half:
-                return L"esi";
-            case Size::Quarter:
-                return L"si";
-            case Size::OneEight:
-                return L"sil";
+                result = L"rsi";
+                break; case Size::Half:
+                result = L"esi";
+                break; case Size::Quarter:
+                result = L"si";
+                break; case Size::OneEight:
+                result = L"sil";
             }
             break;
         }
@@ -336,13 +677,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rdx";
-            case Size::Half:
-                return L"edx";
-            case Size::Quarter:
-                return L"dx";
-            case Size::OneEight:
-                return L"dl";
+                result = L"rdx";
+                break; case Size::Half:
+                result = L"edx";
+                break; case Size::Quarter:
+                result = L"dx";
+                break; case Size::OneEight:
+                result = L"dl";
             }
             break;
         }
@@ -351,13 +692,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"rcx";
-            case Size::Half:
-                return L"ecx";
-            case Size::Quarter:
-                return L"cx";
-            case Size::OneEight:
-                return L"cl";
+                result = L"rcx";
+                break; case Size::Half:
+                result = L"ecx";
+                break; case Size::Quarter:
+                result = L"cx";
+                break; case Size::OneEight:
+                result = L"cl";
             }
             break;
         }
@@ -366,13 +707,13 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"r8";
-            case Size::Half:
-                return L"r8d";
-            case Size::Quarter:
-                return L"r8w";
-            case Size::OneEight:
-                return L"r8b";
+                result = L"r8";
+                break; case Size::Half:
+                result = L"r8d";
+                break; case Size::Quarter:
+                result = L"r8w";
+                break; case Size::OneEight:
+                result = L"r8b";
             }
             break;
         }
@@ -381,24 +722,40 @@ std::wstring Register::toString() const
             switch(size)
             {
             case Size::Full:
-                return L"r9";
-            case Size::Half:
-                return L"r9d";
-            case Size::Quarter:
-                return L"r9w";
-            case Size::OneEight:
-                return L"r9b";
+                result = L"r9";
+                break; case Size::Half:
+                result = L"r9d";
+                break; case Size::Quarter:
+                result = L"r9w";
+                break; case Size::OneEight:
+                result = L"r9b";
             }
             break;
         }
         }
     }
-    return std::wstring();
+
+    if (!result.empty())
+    {
+        result = L'%' + result;
+        if (isPtr)
+        {
+            result = L'(' + result + L')';
+            if (ptrOffset != 0)
+                result = std::to_wstring(ptrOffset) + result;
+        }
+    }
+
+    return result;
 }
 
 Register::Register(unsigned short index, Register::Size asize) : size(asize), argumentIndex(index)
 {
+}
 
+Register::Register(unsigned short index, Register::Size assize, int offset) : size(assize), argumentIndex(index), ptrOffset(offset)
+{
+    isPtr = true;
 }
 
 

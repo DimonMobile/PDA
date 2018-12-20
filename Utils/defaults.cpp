@@ -29,6 +29,7 @@ namespace Defaults
         const wchar_t minusToken            = L'-';
         const wchar_t starToken             = L'*';
         const wchar_t slashToken            = L'/';
+        const wchar_t remainderToken        = L'%';
         const wchar_t leftBraceToken        = L'(';
         const wchar_t rightBraceToken       = L')';
         const wchar_t semicolonToken        = L';';
@@ -57,7 +58,7 @@ namespace Defaults
         Edge alphaSpaceEdge = alphaEdge + Edge::create(L'_');
 
         result = {
-/* 0 */             Fst::Vertex( _(1, Edge::create(L'@')), _(15, Edge::create(L'б')), _(20, Edge::create(L'в')), _(27, Edge::create(L'д')), _(34, Edge::create(L'к')), _(39, Edge::create(L'л')), _(47, Edge::create(L'п')), _(71, Edge::create(L'р')), _(76, Edge::create(L'с')), _(82, Edge::create(L'ц')), _(95, digitEdge), _(98, Edge::create(L'0')), _(101, alphaSpaceEdge), _(102, Edge::create(L'+')), _(103, Edge::create(L'-')), _(104, Edge::create(L'*')), _(105, Edge::create(L'/')), _(106, Edge::create(L'\"') ), _(108, Edge::create(L';')), _(109, Edge::create(L':')), _(110, Edge::create(L'=')), _(112, Edge::create(L'(')), _(113, Edge::create(L')')), _(114, Edge::create(L'<')), _(116, Edge::create('>')), _(118, Edge::create(L',')) )
+/* 0 */             Fst::Vertex( _(1, Edge::create(L'@')), _(15, Edge::create(L'б')), _(20, Edge::create(L'в')), _(27, Edge::create(L'д')), _(34, Edge::create(L'к')), _(39, Edge::create(L'л')), _(47, Edge::create(L'п')), _(71, Edge::create(L'р')), _(76, Edge::create(L'с')), _(82, Edge::create(L'ц')), _(95, digitEdge), _(98, Edge::create(L'0')), _(101, alphaSpaceEdge), _(102, Edge::create(L'+')), _(103, Edge::create(L'-')), _(104, Edge::create(L'*')), _(105, Edge::create(L'/')), _(106, Edge::create(L'\"') ), _(108, Edge::create(L';')), _(109, Edge::create(L':')), _(110, Edge::create(L'=')), _(112, Edge::create(L'(')), _(113, Edge::create(L')')), _(114, Edge::create(L'<')), _(116, Edge::create('>')), _(118, Edge::create(L',')), _(119, Edge::create(L'%')) )
 /* 1 */         ,   Fst::Vertex( _(2, Edge::create(L'н')), _(7, Edge::create(L'у')) )
 /* 2 */         ,   Fst::Vertex( _(3, Edge::create(L'у')) )
 /* 3 */         ,   Fst::Vertex( _(4, Edge::create(L'м')) )
@@ -176,6 +177,7 @@ namespace Defaults
 /*116*/         ,   Fst::Vertex( _(117, Edge::create(L'=')) ).setAction([&](){Fst::userData = Constants::greaterToken;})
 /*117*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::greaterOrEqualToken;})
 /*118*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::commaToken;})
+/*119*/         ,   Fst::Vertex().setAction([&](){Fst::userData = Constants::remainderToken;})
         };
         return result;
     }
@@ -190,8 +192,9 @@ namespace Defaults
                         , Grammar::Rule(L'V', L"i:t,V", L"i:t;", L"").setErrorString(L"Variable declare error")
                         , Grammar::Rule(L'B', L"OB", L"").setErrorString(L"Function body error")
                         , Grammar::Rule(L'O', L"rE;", L"pE;", L"i=E;").setErrorString(L"Operation errror")
-                        , Grammar::Rule(L'E', L"i+E", L"i-E", L"i*E", L"i/E", L"(E)", L"i", L"l", L"i(C)").setErrorString(L"Invalid expression")
-                        , Grammar::Rule(L'C', L"E,E", L"E", L"t").setErrorString(L"Invalid passing function arguments")
+                        , Grammar::Rule(L'E', L"F+E", L"F-E", L"F*E", L"F/E", L"F%E", L"F").setErrorString(L"Invalid expression")
+                        , Grammar::Rule(L'F', L"i", L"l", L"i(C)", L"(E)")
+                        , Grammar::Rule(L'C', L"E,C", L"E").setErrorString(L"Invalid passing function arguments")
                         // TODO: expression grammar and many other
 
                     );

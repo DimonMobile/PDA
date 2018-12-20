@@ -16,9 +16,11 @@ struct Register
     bool integer = true;
     enum
     {
+        Dest = 0,
+        Source = 1,
         ReturnType = 0x50,
         StackBase,
-        StackTop
+        StackTop,
     };
     enum class Size
     {
@@ -30,6 +32,9 @@ struct Register
     unsigned short argumentIndex = ReturnType;
     std::wstring toString() const;
     Register(unsigned short index, Size asize);
+    Register(unsigned short index, Size assize, int offset);
+    bool isPtr = false;
+    int ptrOffset = 0;
 };
 
 class Generator
@@ -39,21 +44,30 @@ public:
 
     static wchar_t registerSuffix(const Register &source);
     //  ASM functions
-    static std::wstring sub(const int source, const Register &dest);
-    static std::wstring sub(const Register &source, const int dest);
-    static std::wstring sub(const Register &source, const std::wstring &dest);
+    static std::wstring cltd();
+    static std::wstring div(const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring mul(const Register &source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring add(const Register &source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring add(const int source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring sub(const int source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring sub(const Register &source, const int dest, const wchar_t suff = L'\0');
+    static std::wstring sub(const Register &source, const std::wstring &dest, const wchar_t suff = L'\0');
+    static std::wstring sub(const Register &source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring call(const std::wstring &label);
     static std::wstring comment(const std::wstring &source);
-    static std::wstring push(const Register &source);
-    static std::wstring pop(const Register &dest);
-    static std::wstring mov(const Register &source, const Register &destination);
-    static std::wstring mov(const std::wstring &source, const Register &destination);
-    static std::wstring mov(const int source, const Register &destination);
+    static std::wstring push(const Register &source, const wchar_t suff = L'\0');
+    static std::wstring pop(const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring mov(const Register &source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring mov(const std::wstring &source, const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring mov(const int source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring ret();
     static std::wstring syscall();
 private:
     void writeLiterals(std::wostream &stream);
     void writeFunctions(std::wostream &stream);
+    void writeFunctionBody(std::wostream &stream, const size_t startTokenIndex);
+    Identifier::Type writeAsembledExpression(std::wostream &stream, const std::vector<Token> &operation);
+    void writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation);
     void writeGlobalFunctions(std::wostream &stream);
     bool isMainFunctionExists();
     static std::wstring hash(const std::wstring &source);

@@ -155,6 +155,7 @@ Tokenizer::Tokenizer(const std::wstring &source) : m_willFunction(false),   m_is
             {
                 m_identifiers[i].linkTo = foundIndex;
                 m_identifiers[i].context = Identifier::Context::Link;
+                m_identifiers[i].type = m_identifiers[static_cast<size_t>(foundIndex)].type;
             }
         }
     }
@@ -198,7 +199,6 @@ void Tokenizer::commitToken()
                 {
                     Identifier &identifier = m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)];
                     identifier.decoratedName = identifier.decoratedName + Identifier::typeToWChar(m_identifiers[m_identifiers.size()-1].type) + L'@';
-                    identifier.functionArgTypes.push_back(m_identifiers[m_identifiers.size()-1].type);
                 }
             }
             else
@@ -216,6 +216,7 @@ void Tokenizer::commitToken()
         m_isPrevTokenTypeToken = false;
         Identifier id;
         id.tokenIndex = static_cast<int>(m_tokens.size() - 1);
+        m_tokens[m_tokens.size()-1].identifierIdx = static_cast<int>(m_identifiers.size());
         id.name = m_token;
         if (m_willFunction)
         {
@@ -257,14 +258,17 @@ void Tokenizer::commitToken()
     else if (currentToken.token == L'v')
     {
         int summaryOffset = 0;
+        std::vector<Identifier> functionArgs;
         for(int i = static_cast<int>(m_identifiers.size()) - 1; i >= 0; --i )
         {
             Identifier &identifier = m_identifiers[static_cast<size_t>(i)];
-            if (identifier.context != Identifier::Context::Argument && identifier.type != Identifier::Type::Function)
+            if ( !(identifier.context == Identifier::Context::Declaration && identifier.type == Identifier::Type::Function) )
             {
-                identifier.context = Identifier::Context::Declaration;
                 summaryOffset += identifier.size();
-                identifier.rbpOffset = summaryOffset;
+                identifier.rbpOffset = -summaryOffset;
+                if (identifier.context == Identifier::Context::Argument)
+                    functionArgs.push_back(identifier);
+                identifier.context = Identifier::Context::Declaration;
             }
             else
             {
@@ -274,6 +278,7 @@ void Tokenizer::commitToken()
         if (m_lastFunctionIdentifierIndex >= 0 && m_lastFunctionIdentifierIndex < static_cast<int>(identifiers().size()))
         {
             m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].rbpOffset = summaryOffset;
+            m_identifiers[static_cast<size_t>(m_lastFunctionIdentifierIndex)].functionArgs = functionArgs;
         }
     }
     else if (currentToken.token == L'f')
@@ -285,6 +290,7 @@ void Tokenizer::commitToken()
         Identifier id;
         id.context = Identifier::Context::Literal;
         id.tokenIndex = static_cast<int>(m_tokens.size()) - 1;
+        m_tokens[m_tokens.size()-1].identifierIdx = static_cast<int>(m_identifiers.size());
         id.type = Identifier::typeFromWChar(Fst::userData_1);
         id.decoratedName = Identifier::typeToWChar(id.type);
         id.decoratedName += L'@' + std::to_wstring(m_tokens[id.tokenIndex].line) + L'@' + std::to_wstring(m_tokens[id.tokenIndex].position);
@@ -355,7 +361,7 @@ void Tokenizer::printIdentifiers() const
     std::wcout << std::setfill(L'=') << std::setw(190) << L' ' << std::setfill(L' ') << std::endl;
 }
 
-int Tokenizer::findDeclaration(const std::wstring &wsrc)
+int Tokenizer::findDeclaration(const std::wstring &wsrc) const
 {
     for(int i = static_cast<int>(m_identifiers.size() - 1) ; i>= 0; --i)
         if ( (m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Declaration || m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Argument)
@@ -390,6 +396,14 @@ Identifier::Identifier() : rbpOffset(0), linkTo(-1)
     returnType = Type::Undefined;
     context = Context::Default;
 
+}
+
+Identifier Identifier::createIntegerLiteral(const int value)
+{
+    Identifier id;
+    id.type = Identifier::Type::Integer;
+    id.value.intValue = value;
+    return id;
 }
 
 std::wstring Identifier::contextToString(const Identifier::Context cnt)
@@ -511,6 +525,31 @@ int Identifier::size()
         return 0;
     }
     return 0;
+}
+
+int Identifier::roundedRbpOffset() const
+{
+    int full = rbpOffset / 16;
+    int remainder = rbpOffset % 16;
+    return (remainder > 0) ? full * 16 + 16 : rbpOffset;
+}
+
+std::wstring Token::vectorToWString(const std::vector<Token> &src)
+{
+    std::wstring result;
+    for (const Token &token : src)
+        result += token.token;
+    return result;
+}
+
+int Token::getNextIdentifierIdx(const std::vector<Token> &src, const int offset)
+{
+    for(std::vector<Token>::const_iterator it = src.cbegin() + offset; it != src.end(); ++it)
+    {
+        if (it->identifierIdx != -1)
+            return static_cast<int>(std::distance(src.begin(), it));
+    }
+    return -1;
 }
 
 } // namespace Transducer

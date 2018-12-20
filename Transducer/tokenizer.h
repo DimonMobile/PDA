@@ -16,6 +16,9 @@ struct Token
     wchar_t token;
     int position, line;
     int fileIndex;
+    int identifierIdx = -1;
+    static std::wstring vectorToWString(const std::vector<Token> &src);
+    static int getNextIdentifierIdx(const std::vector<Token> &src, const int offset = 0);
 };
 
 struct Identifier
@@ -53,8 +56,10 @@ struct Identifier
     int rbpOffset;
     int linkTo;
     int tokenIndex;
-    std::vector<Type> functionArgTypes;
+    std::vector<Identifier> functionArgs;
     Identifier();
+
+    static Identifier createIntegerLiteral(const int value);
     static std::wstring contextToString(const Context cnt);
     static Type typeFromWChar(const wchar_t ch);
     static wchar_t typeToWChar(const Type tp);
@@ -62,6 +67,7 @@ struct Identifier
     static std::wstring typeToAsm(const Type tp);
     static Type typeFromString(const std::wstring &tp);
     int size();
+    int roundedRbpOffset() const;
 
 };
 
@@ -71,7 +77,7 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens() const;
     void printIdentifiers() const;
-    int findDeclaration(const std::wstring &wsrc);
+    int findDeclaration(const std::wstring &wsrc) const;
     const std::vector<Identifier> &identifiers() const;
     const std::vector<Token> &tokens() const;
     const std::vector<std::wstring> &files() const;
