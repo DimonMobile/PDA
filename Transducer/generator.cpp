@@ -368,6 +368,20 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
             int argCount = (++tokenIterator)->getCharToken() - L'0';
             std::vector<Identifier> arguments;
             // TODO: function passing arguments
+            stream << comment(L"Passing arguments") << std::endl;
+            for(int i = argCount - 1; i >= 0; --i)
+            {
+                if (idStack.top().type == Identifier::Type::Integer)
+                {
+                    if (idStack.top().context == Identifier::Context::Literal)
+                        stream << mov(idStack.top().value.intValue, Register(i, Register::Size::Half)) << std::endl;
+                    else if (idStack.top().context == Identifier::Context::Link)
+                        stream << mov( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[idStack.top().linkTo].rbpOffset ), Register(i, Register::Size::Half), L'l') << std::endl;
+                    //Popping from stack
+                    idStack.pop();
+                    stream << add(4, Register(Register::StackTop, Register::Size::Full) ) << std::endl;
+                }
+            }
 
         }
         else if (token.isOperation())
