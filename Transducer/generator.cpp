@@ -334,7 +334,7 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
 
     std::stack<Identifier> idStack;
     int offset = -1;
-
+    stream << converted << std::endl;
     for(std::list<ExpressionToken>::const_iterator tokenIterator = converted.cbegin(); tokenIterator != converted.cend(); ++tokenIterator)
     {
         const ExpressionToken &token = *tokenIterator;
@@ -367,8 +367,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
         {
             int argCount = (++tokenIterator)->getCharToken() - L'0';
             std::vector<Identifier> arguments;
-            // TODO: function passing arguments
             stream << comment(L"Passing arguments") << std::endl;
+            std::wstring decorator;
             for(int i = argCount - 1; i >= 0; --i)
             {
                 if (idStack.top().type == Identifier::Type::Integer)
@@ -377,12 +377,23 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                         stream << mov(idStack.top().value.intValue, Register(i, Register::Size::Half)) << std::endl;
                     else if (idStack.top().context == Identifier::Context::Link)
                         stream << mov( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[idStack.top().linkTo].rbpOffset ), Register(i, Register::Size::Half), L'l') << std::endl;
-                    //Popping from stack
+                    // Popping from stack
                     idStack.pop();
                     stream << add(4, Register(Register::StackTop, Register::Size::Full) ) << std::endl;
+                    // Adding f-tion decoration by type
+                    decorator += L"@i";
                 }
             }
-
+            // Adding f-tion decoration
+            decorator += L'@';
+            // Calling function
+            stream << call(hash(idStack.top().name + decorator)) << std::endl;
+            // Returning value to the stack
+            if (idStack.top().returnType == Identifier::Type::Integer)
+            {
+                stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l');
+            }
+            idStack.top().type = idStack.top().returnType;
         }
         else if (token.isOperation())
         {
