@@ -334,7 +334,6 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
 
     std::stack<Identifier> idStack;
     int offset = -1;
-    stream << converted << std::endl;
     for(std::list<ExpressionToken>::const_iterator tokenIterator = converted.cbegin(); tokenIterator != converted.cend(); ++tokenIterator)
     {
         const ExpressionToken &token = *tokenIterator;
@@ -361,6 +360,14 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                 result = Identifier::Type::Integer;
                 break;
             }
+            case Identifier::Type::Undefined: // only if function
+            {
+                if (currentIdentifier.context == Identifier::Context::Default) // I'm sure that it is a function!
+                {
+                    stream << sub(4, Register(Register::StackTop, Register::Size::Full)) << std::endl;
+                }
+                break;
+            }
             }
         }
         else if (token.getCharToken() == L'@')
@@ -373,10 +380,7 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
             {
                 if (idStack.top().type == Identifier::Type::Integer)
                 {
-                    if (idStack.top().context == Identifier::Context::Literal)
-                        stream << mov(idStack.top().value.intValue, Register(i, Register::Size::Half)) << std::endl;
-                    else if (idStack.top().context == Identifier::Context::Link)
-                        stream << mov( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[idStack.top().linkTo].rbpOffset ), Register(i, Register::Size::Half), L'l') << std::endl;
+                    stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(i, Register::Size::Half), L'l') << std::endl;
                     // Popping from stack
                     idStack.pop();
                     stream << add(4, Register(Register::StackTop, Register::Size::Full) ) << std::endl;
@@ -388,12 +392,17 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
             decorator += L'@';
             // Calling function
             stream << call(hash(idStack.top().name + decorator)) << std::endl;
+
+            int functionIndex = m_tokenizer.findDeclaration(idStack.top().name + decorator);
+            assert(functionIndex != -1);
+            idStack.top().returnType = m_tokenizer.identifiers()[functionIndex].returnType;
+            idStack.top().type = idStack.top().returnType;
+
             // Returning value to the stack
             if (idStack.top().returnType == Identifier::Type::Integer)
-            {
-                stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l');
-            }
-            idStack.top().type = idStack.top().returnType;
+                stream << mov(Register(Register::ReturnType, Register::Size::Half), Register(Register::StackTop, Register::Size::Full, 0), L'l') << std::endl;
+
+            result = idStack.top().returnType;
         }
         else if (token.isOperation())
         {

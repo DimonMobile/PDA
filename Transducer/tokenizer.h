@@ -77,7 +77,7 @@ public:
     Tokenizer(const std::wstring &source);
     void printTokens() const;
     void printIdentifiers() const;
-    int findDeclaration(const std::wstring &wsrc);
+    int findDeclaration(const std::wstring &wsrc) const;
     const std::vector<Identifier> &identifiers() const;
     const std::vector<Token> &tokens() const;
     const std::vector<std::wstring> &files() const;

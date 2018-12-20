@@ -361,7 +361,7 @@ void Tokenizer::printIdentifiers() const
     std::wcout << std::setfill(L'=') << std::setw(190) << L' ' << std::setfill(L' ') << std::endl;
 }
 
-int Tokenizer::findDeclaration(const std::wstring &wsrc)
+int Tokenizer::findDeclaration(const std::wstring &wsrc) const
 {
     for(int i = static_cast<int>(m_identifiers.size() - 1) ; i>= 0; --i)
         if ( (m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Declaration || m_identifiers[static_cast<size_t>(i)].context == Identifier::Context::Argument)
@@ -529,9 +529,9 @@ int Identifier::size()
 
 int Identifier::roundedRbpOffset() const
 {
-    int full = rbpOffset / 8;
-    int remainder = rbpOffset % 8;
-    return (remainder > 0) ? full * 8 + 8 : rbpOffset;
+    int full = rbpOffset / 16;
+    int remainder = rbpOffset % 16;
+    return (remainder > 0) ? full * 16 + 16 : rbpOffset;
 }
 
 std::wstring Token::vectorToWString(const std::vector<Token> &src)
