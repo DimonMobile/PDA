@@ -191,11 +191,10 @@ namespace Defaults
                         , Grammar::Rule(L'A', L"i:t,A", L"i:t", L"").setErrorString(L"Arguments error")
                         , Grammar::Rule(L'V', L"i:t,V", L"i:t;", L"").setErrorString(L"Variable declare error")
                         , Grammar::Rule(L'B', L"OB", L"").setErrorString(L"Function body error")
-                        , Grammar::Rule(L'O', L"rE;", L"pE;", L"i=E;").setErrorString(L"Operation errror")
+                        , Grammar::Rule(L'O', L"ai;", L"rE;", L"pE;", L"i=E;", L"w(E)O}", L"c(E)O}").setErrorString(L"Operation errror")
                         , Grammar::Rule(L'E', L"F+E", L"F-E", L"F*E", L"F/E", L"F%E", L"F").setErrorString(L"Invalid expression")
-                        , Grammar::Rule(L'F', L"i", L"l", L"i(C)", L"(E)")
+                        , Grammar::Rule(L'F', L"i", L"l", L"i(C)", L"(E)").setErrorString(L"Operand using error")
                         , Grammar::Rule(L'C', L"E,C", L"E").setErrorString(L"Invalid passing function arguments")
-                        // TODO: expression grammar and many other
 
                     );
         return StoreFst(grammar);

@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include "Utils/misc.h"
+#include "Utils/settings.h"
 #include "Transducer/expressiontoken.h"
 
 #define UNUSED(x) (void)x
@@ -24,18 +25,23 @@ namespace Constants
     const std::wstring sectionTextString = L".section .text";
     const std::wstring integerOutputStringLabel = L"IntegerOutput";
     const std::wstring integerOutputString = L".asciz \"%d\\n\"";
+    const std::wstring integerInputStringLabel = L"IntegerInput";
+    const std::wstring integerInputString = L".asciz \"%d\"";
+    //  Error strings
+    const std::wstring errorMessageImplicitCast = L"Implicit casting not allowed!";
 }
 
 Generator::Generator(const Tokenizer &tokenizer, const StoreFst &storeFst) :
     m_mainFunctionExists(-1), m_tokenizer(tokenizer),
     m_storeFst(storeFst)
 {
-
     std::wofstream ostream("result.s");
     ostream << Constants::firstLineComment << std::endl;
     ostream << Constants::sectionDataString << std::endl;
     ostream << Constants::integerOutputStringLabel << L':' << std::endl;
     ostream << Constants::integerOutputString << std::endl;
+    ostream << Constants::integerInputStringLabel << L':' << std::endl;
+    ostream << Constants::integerInputString << std::endl;
     //writeLiterals(ostream);
     ostream << Constants::sectionUninitializedDataString << std::endl;
     ostream << Constants::sectionTextString << std::endl;
@@ -194,6 +200,17 @@ std::wstring Generator::pop(const Register &dest, const wchar_t suff)
     std::wstring result = L"pop";
     result += suff == L'\0' ? registerSuffix(dest) : suff;
     result += L'\t';
+    result += dest.toString();
+    return result;
+}
+
+std::wstring Generator::lea(const Register &source, const Register &dest, const wchar_t suff)
+{
+    std::wstring result = L"lea";
+    result += suff == L'\0' ? registerSuffix(source) : suff;
+    result += L"\t";
+    result += source.toString();
+    result += L",\t";
     result += dest.toString();
     return result;
 }
@@ -419,7 +436,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     idStack.pop();
                     if (idStack.top().type != Identifier::Type::Integer)
                     {
-                        // TODO: throw exception: invalid cast
+                        const Token &srcToken = m_tokenizer.tokens()[idStack.top().tokenIndex];
+                        throw Exception::SourceException(srcToken.line, srcToken.position, L"\"" + m_tokenizer.files()[srcToken.fileIndex] + L"\"" + L" " + Constants::errorMessageImplicitCast);
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
                     stream << add(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
@@ -435,7 +453,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     idStack.pop();
                     if (idStack.top().type != Identifier::Type::Integer)
                     {
-                        // TODO: throw exception: invalid cast
+                        const Token &srcToken = m_tokenizer.tokens()[idStack.top().tokenIndex];
+                        throw Exception::SourceException(srcToken.line, srcToken.position, L"\"" + m_tokenizer.files()[srcToken.fileIndex] + L"\"" + L" " + Constants::errorMessageImplicitCast);
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
                     stream << sub(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
@@ -451,7 +470,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     idStack.pop();
                     if (idStack.top().type != Identifier::Type::Integer)
                     {
-                        // TODO: throw exception: invalid cast
+                        const Token &srcToken = m_tokenizer.tokens()[idStack.top().tokenIndex];
+                        throw Exception::SourceException(srcToken.line, srcToken.position, L"\"" + m_tokenizer.files()[srcToken.fileIndex] + L"\"" + L" " + Constants::errorMessageImplicitCast);
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::Dest, Register::Size::Half), L'l') << std::endl;
                     stream << mul(Register(Register::Source, Register::Size::Half), Register(Register::Dest, Register::Size::Half)) << std::endl;
@@ -467,7 +487,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     idStack.pop();
                     if (idStack.top().type != Identifier::Type::Integer)
                     {
-                        // TODO: throw exception: invalid cast
+                        const Token &srcToken = m_tokenizer.tokens()[idStack.top().tokenIndex];
+                        throw Exception::SourceException(srcToken.line, srcToken.position, L"\"" + m_tokenizer.files()[srcToken.fileIndex] + L"\"" + L" " + Constants::errorMessageImplicitCast);
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
                     stream << cltd() << std::endl;
@@ -484,7 +505,8 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
                     idStack.pop();
                     if (idStack.top().type != Identifier::Type::Integer)
                     {
-                        // TODO: throw exception: invalid cast
+                        const Token &srcToken = m_tokenizer.tokens()[idStack.top().tokenIndex];
+                        throw Exception::SourceException(srcToken.line, srcToken.position, L"\"" + m_tokenizer.files()[srcToken.fileIndex] + L"\"" + L" " + Constants::errorMessageImplicitCast);
                     }
                     stream << mov(Register(Register::StackTop, Register::Size::Full, 0), Register(Register::ReturnType, Register::Size::Half), L'l') << std::endl;
                     stream << cltd() << std::endl;
@@ -502,6 +524,14 @@ Identifier::Type Generator::writeAsembledExpression(std::wostream &stream, const
 
 void Generator::writeAssembledOperation(std::wostream &stream, const std::vector<Token> &operation)
 {
+    if (operation[0].token == L'a')
+    {
+        const Identifier &askId = m_tokenizer.identifiers()[operation[1].identifierIdx];
+        stream << comment(L"Input operator") << std::endl;
+        stream << mov(L'$' + Constants::integerInputStringLabel, Register(0, Register::Size::Full)) << std::endl;
+        stream << lea( Register(Register::StackBase, Register::Size::Full, m_tokenizer.identifiers()[askId.linkTo].rbpOffset), Register(1, Register::Size::Full ) ) << std::endl;
+        stream << call(L"scanf") << std::endl;
+    }
     if (operation[0].token == L'i')
     {
         std::vector<Token> expression;

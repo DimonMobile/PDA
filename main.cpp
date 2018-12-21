@@ -25,8 +25,12 @@ int main(int argc, char **argv)
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
         PDA::Transducer::StoreFst storefst(PDA::Utils::Defaults::mfst());
-        tokenizer.printTokens();
-        tokenizer.printIdentifiers();
+        if (PDA::Utils::Settings::Instance().isSyntaxTraceEnabled())
+        {
+            std::wcout << preprocessor.source() << std::endl;
+            tokenizer.printTokens();
+            tokenizer.printIdentifiers();
+        }
         storefst.setSource(tokenizer);
         storefst.debugLine();
         bool mres;
@@ -34,7 +38,10 @@ int main(int argc, char **argv)
         {
             mres = storefst.step();
         }while(mres);
-        storefst.printRulesSequence();
+        if (PDA::Utils::Settings::Instance().isSyntaxTraceEnabled())
+        {
+            storefst.printRulesSequence();
+        }
 
         PDA::Transducer::Generator generator(tokenizer, storefst);
     }

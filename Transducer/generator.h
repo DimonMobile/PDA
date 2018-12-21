@@ -57,6 +57,7 @@ public:
     static std::wstring comment(const std::wstring &source);
     static std::wstring push(const Register &source, const wchar_t suff = L'\0');
     static std::wstring pop(const Register &dest, const wchar_t suff = L'\0');
+    static std::wstring lea(const Register &source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring mov(const Register &source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring mov(const std::wstring &source, const Register &dest, const wchar_t suff = L'\0');
     static std::wstring mov(const int source, const Register &dest, const wchar_t suff = L'\0');
