@@ -25,7 +25,7 @@ int main(int argc, char **argv)
         PDA::Transducer::Preprocessor preprocessor(PDA::Utils::Settings::Instance().sourceFilePath());
         PDA::Transducer::Tokenizer tokenizer(preprocessor.source());
         PDA::Transducer::StoreFst storefst(PDA::Utils::Defaults::mfst());
-        if (PDA::Utils::Settings::Instance().isSyntaxTraceEnabled())
+        if (PDA::Utils::Settings::Instance().advancedEnable())
         {
             std::wcout << preprocessor.source() << std::endl;
             tokenizer.printTokens();
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
         {
             mres = storefst.step();
         }while(mres);
-        if (PDA::Utils::Settings::Instance().isSyntaxTraceEnabled())
+        if (PDA::Utils::Settings::Instance().advancedEnable())
         {
             storefst.printRulesSequence();
         }

@@ -30,6 +30,8 @@ namespace Constants
     const std::wstring outputPathArgumentShort = L"-O";
     const std::wstring traceArgumentLong = L"--trace";
     const std::wstring traceArgumentShort = L"-T";
+    const std::wstring advancedLogLong = L"--advanced";
+    const std::wstring advancedLogShort = L"-A";
     const std::wstring helpText = applicationDisplayName + L' ' + applicationVersion + L"\n\n"
                                   L"Arguments:\n"
                                   L"   -h or --help\t\t\tPrint help(this message) and exit\n"
@@ -37,7 +39,8 @@ namespace Constants
                                   L"   -S or --source\t\tSet source file\n"
                                   L"   -I or --include\t\tSet directory where includes will be found\n"
                                   L"   -O or --output\t\tSet output filename\n"
-                                  L"   -T or --trace\t\tFull output log\n";
+                                  L"   -T or --trace\t\tFull output log\n"
+                                  L"   -A or --advance\t\tAdvanced log";
 } // namespace Constants
 
 
@@ -46,6 +49,7 @@ void Settings::initParams(int argc, char **argv)
     m_isHelp = false;
     m_isVersion = false;
     m_syntaxTraceEnable = false;
+    m_advancedEnable = false;
     m_outputFilePath = L"result.s";
 
     for(int i = 1 ; i < argc; ++i)
@@ -77,6 +81,10 @@ void Settings::initParams(int argc, char **argv)
         else if (currentParam == Constants::traceArgumentShort || currentParam == Constants::traceArgumentLong)
         {
             m_syntaxTraceEnable = true;
+        }
+        else if (currentParam == Constants::advancedLogLong || currentParam == Constants::advancedLogShort)
+        {
+            m_advancedEnable = true;
         }
         else if (currentParam == Constants::outputPathArgumentLong || currentParam == Constants::outputPathArgumentShort)
         {
@@ -129,6 +137,11 @@ std::string Settings::sourceFilePath() const
 Settings::Settings()
 {
 
+}
+
+bool Settings::advancedEnable() const
+{
+    return m_advancedEnable;
 }
 
 std::wstring Settings::includeFilePath() const

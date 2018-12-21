@@ -70,7 +70,7 @@ void Preprocessor::execute()
                     wFileName = includeFilePath + L'/' + wFileName;
                 }
                 std::string fileName(wFileName.begin(), wFileName.end());
-                result.append(L"@нумар " + std::to_wstring(1) + L' ' + wFileName + L'\n');
+                result.append(L"@нумар " + std::to_wstring(0) + L' ' + wFileName + L'\n');
                 try
                 {
                     Preprocessor innerPreproc(fileName);

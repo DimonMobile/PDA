@@ -22,9 +22,11 @@ public:
     std::wstring outputFilePath() const;
 
     bool isSyntaxTraceEnabled() const;
+    bool advancedEnable() const;
 
     Settings(const Settings&) = delete;
     void operator = (const Settings&) = delete;
+
 
 private:
     Settings();
@@ -32,6 +34,7 @@ private:
     std::wstring m_sourceFilePath;
     std::wstring m_includeFilePath;
     std::wstring m_outputFilePath;
+    bool m_advancedEnable;
     bool m_syntaxTraceEnable;
     bool m_isVersion;
     bool m_isHelp;
