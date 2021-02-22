@@ -11,4 +11,4 @@ This is a complier from belarussian programming language to GNU x64 assembly pro
 - arithmetic operations +-*/%
 - and so on
 ## Building
-  Used QtCreator for build the project
+  Use QtCreator to build the project
