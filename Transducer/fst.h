@@ -2,6 +2,7 @@
 #define FST_H
 
 #include <functional>
+#include <string>
 #include <vector>
 #include <stack>
 #include <list>
