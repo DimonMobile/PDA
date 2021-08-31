@@ -2,6 +2,7 @@
 #include <cwchar>
 #include <cstring>
 #include <locale>
+#include <clocale>
 #include <codecvt>
 
 #include "Utils/defaults.h"
