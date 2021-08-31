@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(PDA)
-include_directories(${PROJECT_NAME})
 
 set(HEADERS
     Exception/exception.h
@@ -37,4 +36,11 @@ SET(SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+set_property(
+    TARGET PDA
+    PROPERTY CXX_STANDARD 11
+    PROPERTY CXX_STANDARD_REQUIRED ON
+)
+
 target_include_directories(PDA PRIVATE ${PROJECT_SOURCE_DIR})
