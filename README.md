@@ -12,3 +12,11 @@ This is a complier from belarussian programming language to GNU x64 assembly pro
 - and so on
 ## Building
   Use QtCreator to build the project
+  
+  OR
+  ```
+  mkdir build
+  cd build
+  cmake ..
+  cmake --build .
+  ```
